@@ -21,7 +21,7 @@ export default defineConfig({
     hmr: {
       host: "localhost", // or your LAN IP, e.g. "192.168.1.10"
       port: 5173,
-      protocol: "ws",    // or "wss" if using https
+      protocol: "ws", // or "wss" if using https
     },
   },
   resolve: {
