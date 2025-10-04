@@ -20,7 +20,8 @@ async function getActiveWorkspaceUsers(workspaceId: string) {
     )
     .innerJoin(userTable, eq(workspaceUserTable.userId, userTable.id));
 
-  return activeWorkspaceUsers;
+  const res = activeWorkspaceUsers;
+  return res;
 }
 
 export default getActiveWorkspaceUsers;

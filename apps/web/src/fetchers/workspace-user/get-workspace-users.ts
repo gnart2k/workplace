@@ -17,6 +17,8 @@ async function getWorkspaceUsers({ param }: GetWorkspaceUsersRequest) {
 
   const data = await response.json();
 
+  console.log("fetcher", data);
+
   return data;
 }
 

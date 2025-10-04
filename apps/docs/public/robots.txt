@@ -21,7 +21,3 @@ Disallow: /admin/
 
 # Specify crawl-delay for less aggressive crawling
 Crawl-delay: 1
-
-Host: https://kaneo.app
-
-Sitemap: https://kaneo.app/sitemap.xml

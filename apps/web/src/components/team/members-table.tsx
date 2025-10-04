@@ -1,13 +1,15 @@
+import useAcceptWorkspaceUser from "@/hooks/mutations/workspace-user/use-accept-workspace-user";
 import { useWorkspacePermission } from "@/hooks/useWorkspacePermission";
 import { getStatusIcon, getStatusText } from "@/lib/status";
 import type WorkspaceUser from "@/types/workspace-user";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { MoreHorizontal } from "lucide-react";
 import { useState } from "react";
+import useAuth from "../providers/auth-provider/hooks/use-auth";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import {
@@ -19,13 +21,40 @@ import {
   TableRow,
 } from "../ui/table";
 import DeleteTeamMemberModal from "./delete-team-member-modal";
+import ActionDropdownMenuItem from "./ui/action-dropdown-menu-item";
+import { type ActionKey, type Role, roleActions } from "./ui/role-actions";
 
 function MembersTable({ users }: { users: WorkspaceUser[] }) {
-  const { isOwner } = useWorkspacePermission();
   const [isRemoveMemberModalOpen, setIsRemoveMemberModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<WorkspaceUser | null>(
     null,
   );
+
+  const { user } = useAuth();
+  const { isOwner } = useWorkspacePermission();
+  const queryClient = useQueryClient();
+  const { mutateAsync: acceptWorkspaceInvitation } = useAcceptWorkspaceUser();
+
+  const actionHandlers: Record<ActionKey, (member: WorkspaceUser) => void> = {
+    remove: (member) => {
+      setIsRemoveMemberModalOpen(true);
+      setSelectedMember(member);
+    },
+    acceptInvite: async (member) => {
+      await acceptWorkspaceInvitation({
+        userId: member.userId || "",
+        status: "active",
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["workspace-users"],
+      });
+    },
+    rejectInvite: (member) => {
+      console.log("Reject invite for member:", member);
+      // Implement reject invite logic here
+    },
+  };
 
   if (users?.length === 0) {
     return (
@@ -60,84 +89,97 @@ function MembersTable({ users }: { users: WorkspaceUser[] }) {
             <TableHead className="text-foreground font-medium">
               Joined
             </TableHead>
-            {isOwner && (
-              <TableHead className="text-foreground font-medium">
-                Actions
-              </TableHead>
-            )}
+            <TableHead className="text-foreground font-medium">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users?.map((member) => (
-            <TableRow key={member.userId} className="cursor-pointer">
-              <TableCell className="py-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-5 w-5">
-                    <AvatarFallback className="bg-muted text-muted-foreground font-medium text-xs">
-                      {member.userId?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium">{member.userId}</span>
-                </div>
-              </TableCell>
-              <TableCell className="py-3">
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
-                  {member.role.charAt(0).toUpperCase() +
-                    member.role.slice(1).toLowerCase()}
-                </span>
-              </TableCell>
-              <TableCell className="py-3">
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(member.status as "active" | "pending")}
-                  <span className="text-sm text-muted-foreground">
-                    {getStatusText(member.status as "active" | "pending")}
+          {users?.map((member) => {
+            let currentRole: Role = "member";
+            if (isOwner) {
+              currentRole = "owner";
+            } else if (!isOwner && user?.id === member.userId) {
+              if (member.status === "pending") {
+                currentRole = "invitedPending";
+              } else {
+                currentRole = "member";
+              }
+            } else {
+              currentRole = "member";
+            }
+            const actions = roleActions[currentRole] ?? [];
+
+            return (
+              <TableRow key={member.userId} className="cursor-pointer">
+                <TableCell className="py-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-5 w-5">
+                      <AvatarFallback className="bg-muted text-muted-foreground font-medium text-xs">
+                        {member.userId?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{member.userName}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="py-3">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
+                    {member.role.charAt(0).toUpperCase() +
+                      member.role.slice(1).toLowerCase()}
                   </span>
-                </div>
-              </TableCell>
-              <TableCell className="py-3">
-                <span className="text-sm text-muted-foreground">
-                  {member.joinedAt &&
-                    new Date(member.joinedAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                </span>
-              </TableCell>
-              {isOwner && (
+                </TableCell>
+                <TableCell className="py-3">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(member.status as "active" | "pending")}
+                    <span className="text-sm text-muted-foreground">
+                      {getStatusText(member.status as "active" | "pending")}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="py-3">
+                  <span className="text-sm text-muted-foreground">
+                    {member.joinedAt &&
+                      new Date(member.joinedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                  </span>
+                </TableCell>
                 <TableCell className="py-3">
                   {member.role === "owner" ? (
                     <span className="text-xs text-muted-foreground italic">
                       Workspace owner
                     </span>
                   ) : (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className="p-1 hover:bg-accent rounded"
-                        >
-                          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setIsRemoveMemberModalOpen(true);
-                            setSelectedMember(member);
-                          }}
-                          variant="destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Remove member
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    actions.length > 0 && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="p-1 hover:bg-accent rounded"
+                          >
+                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {actions.map((action) => (
+                            <ActionDropdownMenuItem
+                              key={action.key}
+                              icon={action.icon}
+                              title={action.title}
+                              variant={action.variant}
+                              onClick={() => actionHandlers[action.key](member)}
+                            />
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )
                   )}
                 </TableCell>
-              )}
-            </TableRow>
-          ))}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
 

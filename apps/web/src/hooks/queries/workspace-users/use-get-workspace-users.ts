@@ -2,10 +2,11 @@ import getActiveWorkspaceUsers from "@/fetchers/workspace-user/get-workspace-use
 import { useQuery } from "@tanstack/react-query";
 
 function useGetWorkspaceUsers({ workspaceId }: { workspaceId: string }) {
-  return useQuery({
+  const data = useQuery({
     queryKey: ["workspace-users", workspaceId],
     queryFn: () => getActiveWorkspaceUsers({ param: { workspaceId } }),
   });
+  return data;
 }
 
 export default useGetWorkspaceUsers;

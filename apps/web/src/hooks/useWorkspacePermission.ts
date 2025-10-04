@@ -1,7 +1,7 @@
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
 import useWorkspaceStore from "@/store/workspace";
 
-export type PermissionLevel = "owner" | "member";
+export type PermissionLevel = "owner" | "member" | "invitedPending";
 
 export function useWorkspacePermission() {
   const { workspace } = useWorkspaceStore();

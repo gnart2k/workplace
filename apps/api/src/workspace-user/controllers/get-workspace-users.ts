@@ -3,7 +3,7 @@ import db from "../../database";
 import { userTable, workspaceUserTable } from "../../database/schema";
 
 function getWorkspaceUsers(workspaceId: string) {
-  return db
+  const data = db
     .select({
       userId: workspaceUserTable.userId,
       userName: userTable.name,
@@ -15,6 +15,7 @@ function getWorkspaceUsers(workspaceId: string) {
     .leftJoin(userTable, eq(workspaceUserTable.userId, userTable.id))
     .where(eq(workspaceUserTable.workspaceId, workspaceId))
     .orderBy(asc(workspaceUserTable.status));
+  return data;
 }
 
 export default getWorkspaceUsers;
