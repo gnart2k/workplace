@@ -5,13 +5,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Trash2, X } from "lucide-react";
 import { Button } from "../ui/button";
 
-function DeleteTeamMemberModal({
+function TeamMemberModal({
   userId,
   open,
+  userName,
+  action,
   onClose,
 }: {
   userId: string;
   open: boolean;
+  userName: string;
+  action: "remove" | "decline";
   onClose: () => void;
 }) {
   const { workspaceId } = Route.useParams();
@@ -39,7 +43,9 @@ function DeleteTeamMemberModal({
           <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-xl">
             <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
               <Dialog.Title className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                Remove Team Member
+                {action === "remove"
+                  ? "Remove Team Member"
+                  : "Decline Invitation"}
               </Dialog.Title>
               <Dialog.Close className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300">
                 <X size={20} />
@@ -48,9 +54,9 @@ function DeleteTeamMemberModal({
 
             <div className="p-4">
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                Are you sure you want to remove{" "}
+                Are you sure you want to {action}{" "}
                 <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                  {userId}
+                  {userName}
                 </span>{" "}
                 from the team? This action cannot be undone.
               </p>
@@ -69,7 +75,7 @@ function DeleteTeamMemberModal({
                   className="bg-red-600 text-white hover:bg-red-500 dark:bg-red-500 dark:hover:bg-red-400"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Remove Member
+                  {action}
                 </Button>
               </div>
             </div>
@@ -80,4 +86,4 @@ function DeleteTeamMemberModal({
   );
 }
 
-export default DeleteTeamMemberModal;
+export default TeamMemberModal;

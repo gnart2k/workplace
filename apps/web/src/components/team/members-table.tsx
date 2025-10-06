@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import DeleteTeamMemberModal from "./delete-team-member-modal";
+import TeamMemberModal from "./delete-team-member-modal";
 import ActionDropdownMenuItem from "./ui/action-dropdown-menu-item";
 import { type ActionKey, type Role, roleActions } from "./ui/role-actions";
 
@@ -29,6 +29,8 @@ function MembersTable({ users }: { users: WorkspaceUser[] }) {
   const [selectedMember, setSelectedMember] = useState<WorkspaceUser | null>(
     null,
   );
+  const [isDeclineInvitationModalOpen, setIsDeclineInvitationModalOpen] =
+    useState(false);
 
   const { user } = useAuth();
   const { isOwner } = useWorkspacePermission();
@@ -51,8 +53,8 @@ function MembersTable({ users }: { users: WorkspaceUser[] }) {
       });
     },
     rejectInvite: (member) => {
-      console.log("Reject invite for member:", member);
-      // Implement reject invite logic here
+      setIsDeclineInvitationModalOpen(true);
+      setSelectedMember(member);
     },
   };
 
@@ -184,11 +186,25 @@ function MembersTable({ users }: { users: WorkspaceUser[] }) {
       </Table>
 
       {selectedMember && (
-        <DeleteTeamMemberModal
+        <TeamMemberModal
+          action="remove"
           userId={selectedMember.userId ?? ""}
           open={isRemoveMemberModalOpen}
+          userName={selectedMember.userName ?? ""}
           onClose={() => {
             setIsRemoveMemberModalOpen(false);
+            setSelectedMember(null);
+          }}
+        />
+      )}
+      {selectedMember && (
+        <TeamMemberModal
+          action="decline"
+          userId={selectedMember.userId ?? ""}
+          open={isDeclineInvitationModalOpen}
+          userName={selectedMember.userName ?? ""}
+          onClose={() => {
+            setIsDeclineInvitationModalOpen(false);
             setSelectedMember(null);
           }}
         />
