@@ -83,7 +83,10 @@ function TaskEditPage() {
           <div className="flex-1 min-w-0 overflow-y-auto border-r border-zinc-200 dark:border-zinc-800 flex flex-col-reverse md:flex-row h-full">
             <div className="px-6 py-6 space-y-6 flex-1">
               <div className="space-y-8">
-                <TaskDescription setIsSaving={setIsSaving} />
+                <TaskDescription
+                  setIsSaving={setIsSaving}
+                  isSaving={isSaving}
+                />
                 <TaskTimeTracking taskId={taskId} />
 
                 <div className="space-y-4">
