@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import createWorkspace from "./controllers/create-workspace";
 import deleteWorkspace from "./controllers/delete-workspace";
+import { getAnalytics } from "./controllers/get-analytics";
 import getWorkspace from "./controllers/get-workspace";
 import getWorkspaces from "./controllers/get-workspaces";
 import updateWorkspace from "./controllers/update-workspace";
@@ -28,6 +29,15 @@ const workspace = new Hono<{
 
     return c.json(workspace);
   })
+  .get(
+    "/:workspaceId/analytics",
+    zValidator("param", z.object({ workspaceId: z.string() })),
+    async (c) => {
+      const { workspaceId } = c.req.valid("param");
+      const analytics = await getAnalytics(workspaceId);
+      return c.json(analytics);
+    },
+  )
   .post(
     "/",
     zValidator("json", z.object({ name: z.string(), description: z.string() })),

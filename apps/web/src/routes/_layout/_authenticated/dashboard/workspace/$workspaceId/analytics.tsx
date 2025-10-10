@@ -11,6 +11,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
+import useGetAnalytics from "@/hooks/queries/analytics/use-get-analytics";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Bar,
@@ -28,15 +30,6 @@ export const Route = createFileRoute(
   component: Analytics,
 });
 
-const tasksCompletedData = [
-  { month: "Jan", tasks: 50 },
-  { month: "Feb", tasks: 75 },
-  { month: "Mar", tasks: 60 },
-  { month: "Apr", tasks: 80 },
-  { month: "May", tasks: 90 },
-  { month: "Jun", tasks: 70 },
-];
-
 const tasksCompletedConfig = {
   tasks: {
     label: "Tasks",
@@ -44,24 +37,27 @@ const tasksCompletedConfig = {
   },
 };
 
-const taskStatusData = [
-  { name: "Todo", value: 400, color: "#a1a1aa" },
-  { name: "In Progress", value: 300, color: "#3b82f6" },
-  { name: "Done", value: 200, color: "#22c55e" },
-  { name: "Canceled", value: 100, color: "#ef4444" },
-];
-
-const resolvedVsRemainingData = [
-  { name: "Resolved", value: 650, color: "#22c55e" },
-  { name: "Remaining", value: 350, color: "#a1a1aa" },
-];
-
-const overdueTasksData = [
-  { name: "Overdue", value: 15, color: "#ef4444" },
-  { name: "On Time", value: 85, color: "#22c55e" },
-];
+type ChartEntry = { name: string; value: number; color: string };
 
 function Analytics() {
+  const { workspaceId } = Route.useParams();
+  const { data: analytics, isLoading } = useGetAnalytics(workspaceId);
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (!analytics) {
+    return null;
+  }
+
+  const {
+    tasksCompletedData,
+    taskStatusData,
+    resolvedVsRemainingData,
+    overdueTasksData,
+  } = analytics;
+
   return (
     <WorkspaceLayout title="Analytics">
       <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-2">
@@ -78,7 +74,7 @@ function Analytics() {
               <BarChart accessibilityLayer data={tasksCompletedData}>
                 <CartesianGrid vertical={false} />
                 <XAxis
-                  dataKey="month"
+                  dataKey="day"
                   tickLine={false}
                   tickMargin={10}
                   axisLine={false}
@@ -106,7 +102,7 @@ function Analytics() {
                   outerRadius={80}
                   label
                 >
-                  {taskStatusData.map((entry) => (
+                  {taskStatusData.map((entry: ChartEntry) => (
                     <Cell key={`cell-${entry.name}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -132,7 +128,7 @@ function Analytics() {
                   innerRadius={60}
                   outerRadius={80}
                 >
-                  {resolvedVsRemainingData.map((entry) => (
+                  {resolvedVsRemainingData.map((entry: ChartEntry) => (
                     <Cell key={`cell-${entry.name}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -161,7 +157,7 @@ function Analytics() {
                   outerRadius={80}
                   paddingAngle={5}
                 >
-                  {overdueTasksData.map((entry) => (
+                  {overdueTasksData.map((entry: ChartEntry) => (
                     <Cell key={`cell-${entry.name}`} fill={entry.color} />
                   ))}
                 </Pie>
