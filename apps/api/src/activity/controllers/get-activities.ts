@@ -5,6 +5,9 @@ import { activityTable } from "../../database/schema";
 async function getActivitiesFromTaskId(taskId: string) {
   const activities = await db.query.activityTable.findMany({
     where: eq(activityTable.taskId, taskId),
+    with: {
+      user: true,
+    },
     orderBy: [desc(activityTable.createdAt), desc(activityTable.id)],
   });
   return activities;
