@@ -87,26 +87,26 @@ function TaskDescription({ setIsSaving, isSaving }: TaskDescriptionProps) {
             />
           </Form>
         </div>
-        {(form.formState.isDirty || isSaving) && (
-          <div className="p-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={isGenerating || isSaving}
-              className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            >
-              <Sparkles className="w-3 h-3 mr-1" />
-              {isGenerating ? "Generating..." : "Generate with AI"}
-            </Button>
+        <div className="p-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleGenerate}
+            disabled={isGenerating || isSaving}
+            className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          >
+            <Sparkles className="w-3 h-3 mr-1" />
+            {isGenerating ? "Generating..." : "Generate with AI"}
+          </Button>
+          {(form.formState.isDirty || isSaving) && (
             <Button
               onClick={handleSave}
               disabled={!form.formState.isDirty || isSaving}
             >
               {isSaving ? "Saving..." : "Save"}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

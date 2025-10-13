@@ -22,6 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useGenerateTaskDescription } from "@/fetchers/use-generate-task-description";
 import { useGenerateCommitPrefix } from "@/hooks/mutations/genai/use-generate-commit-prefix";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
@@ -38,6 +39,7 @@ import {
   Flag,
   PlusIcon,
   Search,
+  Sparkles,
   Tag,
   Target,
   UserIcon,
@@ -106,6 +108,8 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { mutateAsync: generatePrefix } = useGenerateCommitPrefix();
+  const { mutateAsync: generateDescription, isPending: isGenerating } =
+    useGenerateTaskDescription();
 
   const { mutateAsync } = useCreateTask();
 
@@ -121,6 +125,23 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
     setSelectedColor("gray");
     setColorPickerOpen(false);
     onClose();
+  };
+
+  const handleGenerate = async () => {
+    if (!title.trim()) {
+      toast.error("Please enter a task title first.");
+      return;
+    }
+
+    try {
+      const { description: generatedDescription } = await generateDescription(
+        title.trim(),
+      );
+      setDescription(generatedDescription);
+      toast.success("AI description generated.");
+    } catch (error) {
+      toast.error("Failed to generate description.");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -338,8 +359,23 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
               required
             />
 
-            <div className="h-[300px] border bg-white dark:bg-zinc-900 border-zinc-200/50 dark:border-zinc-800/50 rounded-lg overflow-hidden">
-              <Editor value={description} onChange={setDescription} />
+            <div className="border bg-white dark:bg-zinc-900 border-zinc-200/50 dark:border-zinc-800/50 rounded-lg overflow-hidden">
+              <div className="h-[300px]">
+                <Editor value={description} onChange={setDescription} />
+              </div>
+              <div className="p-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !title.trim()}
+                  className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  {isGenerating ? "Generating..." : "Generate with AI"}
+                </Button>
+                <div />
+              </div>
             </div>
 
             {labels.length > 0 && (
