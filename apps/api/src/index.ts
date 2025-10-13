@@ -9,9 +9,9 @@ import activity from "./activity";
 import { auth } from "./auth";
 import config from "./config";
 import db from "./database";
+import genai from "./genai";
 import githubIntegration from "./github-integration";
 import label from "./label";
-
 import notification from "./notification";
 import project from "./project";
 import { getPublicProject } from "./project/controllers/get-public-project";
@@ -61,6 +61,8 @@ const githubIntegrationRoute = app.route(
   "/github-integration",
   githubIntegration,
 );
+
+const genaiRoute = app.route("/genai", genai);
 
 const publicProjectRoute = app.get("/public-project/:id", async (c) => {
   const { id } = c.req.param();
@@ -122,6 +124,7 @@ serve(
 );
 
 export type AppType =
+  | typeof genaiRoute
   | typeof workspaceRoute
   | typeof workspaceUserRoute
   | typeof projectRoute
