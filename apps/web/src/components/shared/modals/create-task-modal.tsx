@@ -22,6 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useGenerateCommitPrefix } from "@/hooks/mutations/genai/use-generate-commit-prefix";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import useUpdateTask from "@/hooks/mutations/task/use-update-task";
@@ -104,6 +105,8 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const { mutateAsync: generatePrefix } = useGenerateCommitPrefix();
+
   const { mutateAsync } = useCreateTask();
 
   const handleClose = () => {
@@ -125,10 +128,13 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
     if (!title.trim() || !project?.id || !workspace?.id) return;
 
     try {
+      const { prefix } = await generatePrefix(title.trim());
+      const newTitle = `${prefix}(${project.slug}): ${title.trim()}`;
+
       const taskStatus = status ?? "to-do";
 
       const newTask = await mutateAsync({
-        title: title.trim(),
+        title: newTitle,
         description: description.trim() || "",
         userId: assigneeId,
         priority,
