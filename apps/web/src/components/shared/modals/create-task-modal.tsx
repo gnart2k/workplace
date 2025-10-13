@@ -128,13 +128,10 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
     if (!title.trim() || !project?.id || !workspace?.id) return;
 
     try {
-      const { prefix } = await generatePrefix(title.trim());
-      const newTitle = `${prefix}(${project.slug}): ${title.trim()}`;
-
       const taskStatus = status ?? "to-do";
 
       const newTask = await mutateAsync({
-        title: newTitle,
+        title: title.trim(),
         description: description.trim() || "",
         userId: assigneeId,
         priority,
@@ -142,6 +139,9 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
         dueDate: dueDate ? dueDate.toISOString() : new Date().toISOString(),
         status: taskStatus,
       });
+
+      const { prefix } = await generatePrefix(title.trim());
+      const newTitle = `${prefix}(${project.slug}-${newTask.number}): ${title.trim()}`;
 
       for (const label of labels) {
         try {
@@ -163,6 +163,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
           if (targetColumn) {
             targetColumn.tasks.push({
               ...newTask,
+              title: newTitle,
               assigneeId: assigneeId,
               assigneeName: assigneeId,
               position: 0,
@@ -172,7 +173,12 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
       });
 
       setProject(updatedProject);
-      updateTask({ ...newTask, position: 0, assigneeId: assigneeId });
+      updateTask({
+        ...newTask,
+        title: newTitle,
+        position: 0,
+        assigneeId: assigneeId,
+      });
       toast.success("Task created successfully");
 
       if (createMore) {
