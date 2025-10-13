@@ -1,4 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
+import { relations } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -21,6 +22,10 @@ export const userTable = pgTable("user", {
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
   isAnonymous: boolean("is_anonymous"),
 });
+
+export const userRelations = relations(userTable, ({ many }) => ({
+  activities: many(activityTable),
+}));
 
 export const sessionTable = pgTable("session", {
   id: text("id").primaryKey(),
@@ -182,6 +187,13 @@ export const activityTable = pgTable("activity", {
     }),
   content: text("content"),
 });
+
+export const activityRelations = relations(activityTable, ({ one }) => ({
+  user: one(userTable, {
+    fields: [activityTable.userId],
+    references: [userTable.id],
+  }),
+}));
 
 export const labelTable = pgTable("label", {
   id: text("id")

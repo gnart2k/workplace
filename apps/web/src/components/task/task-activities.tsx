@@ -1,5 +1,5 @@
 import { MarkdownRenderer } from "@/components/common/markdown-renderer";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useDeleteComment from "@/hooks/mutations/comment/use-delete-comment";
 import useGetActivitiesByTaskId from "@/hooks/queries/activity/use-get-activities-by-task-id";
 import { cn } from "@/lib/cn";
@@ -32,8 +32,9 @@ function TaskActivities() {
         <div key={activity.id} className="flex items-start gap-4">
           <div className="relative">
             <Avatar className="w-8 h-8">
+              <AvatarImage src={activity.user?.image || undefined} />
               <AvatarFallback>
-                {activity.userId?.charAt(0) || "U"}
+                {activity.user?.name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <div
@@ -60,7 +61,7 @@ function TaskActivities() {
           <div className="flex-1 flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-zinc-900 dark:text-zinc-400">
-                {activity.userId}
+                {activity.user?.name}
               </span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
                 {formatDistanceToNow(activity.createdAt)} ago
