@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { subscribeToEvent } from "../events";
 import createGithubIntegration from "./controllers/create-github-integration";
+import createPatGithubIntegration from "./controllers/create-pat-github-integration";
 import deleteGithubIntegration from "./controllers/delete-github-integration";
 import getGithubIntegration from "./controllers/get-github-integration";
 import { importIssues } from "./controllers/import-issues";
@@ -50,6 +51,7 @@ subscribeToEvent<{
 }>("task.priority_changed", handleTaskPriorityChanged);
 
 const githubIntegration = new Hono()
+  .route("/", createPatGithubIntegration)
   .get("/app-info", async (c) => {
     return c.json({
       appName: process.env.GITHUB_APP_NAME || null,

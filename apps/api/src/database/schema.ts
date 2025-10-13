@@ -3,10 +3,16 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   integer,
+  pgEnum,
   pgTable,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+
+export const githubConnectionTypeEnum = pgEnum("github_connection_type", [
+  "github_app",
+  "pat",
+]);
 
 export const userTable = pgTable("user", {
   id: text("id")
@@ -244,8 +250,12 @@ export const githubIntegrationTable = pgTable("github_integration", {
     .unique(),
   repositoryOwner: text("repository_owner").notNull(),
   repositoryName: text("repository_name").notNull(),
+  connectionType: githubConnectionTypeEnum("connection_type")
+    .notNull()
+    .default("github_app"),
+  pat: text("pat"),
   installationId: integer("installation_id"),
-  isActive: boolean("is_active").default(true),
+  isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });

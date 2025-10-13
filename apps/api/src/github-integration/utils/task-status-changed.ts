@@ -1,11 +1,8 @@
 import { eq } from "drizzle-orm";
 import db from "../../database";
 import { taskTable } from "../../database/schema";
-import getGithubIntegration from "../controllers/get-github-integration";
-import createGithubApp from "./create-github-app";
 import { addLabelsToIssue } from "./create-github-labels";
-
-const githubApp = createGithubApp();
+import { getOctokitInstance } from "./get-octokit-instance";
 
 export async function handleTaskStatusChanged(data: {
   taskId: string;
@@ -13,10 +10,6 @@ export async function handleTaskStatusChanged(data: {
   oldStatus: string;
   newStatus: string;
 }) {
-  if (!githubApp) {
-    return;
-  }
-
   const { taskId, oldStatus, newStatus } = data;
 
   try {
@@ -29,15 +22,21 @@ export async function handleTaskStatusChanged(data: {
       return;
     }
 
-    const integration = await getGithubIntegration(task.projectId);
+    const octokitInstance = await getOctokitInstance(task.projectId);
 
-    if (!integration || !integration.isActive) {
+    if (!octokitInstance) {
       console.log(
         "No active GitHub integration found for project:",
         task.projectId,
       );
       return;
     }
+
+    const {
+      octokit,
+      owner: repositoryOwner,
+      repo: repositoryName,
+    } = octokitInstance;
 
     const hasKaneoLink = task.description?.includes("Linked to GitHub issue:");
     const hasGitHubLink = task.description?.includes(
@@ -52,24 +51,10 @@ export async function handleTaskStatusChanged(data: {
       return;
     }
 
-    const { repositoryOwner, repositoryName } = integration;
     console.log(
       "Updating GitHub issue status for repository:",
       `${repositoryOwner}/${repositoryName}`,
     );
-
-    let installationId = integration.installationId;
-
-    if (!installationId) {
-      const { data: installation } =
-        await githubApp.octokit.rest.apps.getRepoInstallation({
-          owner: repositoryOwner,
-          repo: repositoryName,
-        });
-      installationId = installation.id;
-    }
-
-    const octokit = await githubApp.getInstallationOctokit(installationId);
 
     let githubIssueUrlMatch = task.description?.match(
       /Linked to GitHub issue: (https:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/\d+)/,

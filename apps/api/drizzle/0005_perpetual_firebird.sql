@@ -1,0 +1,1 @@
+ALTER TABLE "github_integration" ALTER COLUMN "is_active" SET NOT NULL;

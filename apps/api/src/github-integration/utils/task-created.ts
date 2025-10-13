@@ -1,11 +1,8 @@
 import { eq } from "drizzle-orm";
 import db from "../../database";
 import { taskTable } from "../../database/schema";
-import getGithubIntegration from "../controllers/get-github-integration";
-import createGithubApp from "./create-github-app";
 import { addLabelsToIssue } from "./create-github-labels";
-
-const githubApp = createGithubApp();
+import { getOctokitInstance } from "./get-octokit-instance";
 
 export async function handleTaskCreated(data: {
   taskId: string;
@@ -17,10 +14,6 @@ export async function handleTaskCreated(data: {
   number: number;
   projectId: string;
 }) {
-  if (!githubApp) {
-    return;
-  }
-
   const { taskId, userId, title, description, priority, status, projectId } =
     data;
 
@@ -33,31 +26,23 @@ export async function handleTaskCreated(data: {
   }
 
   try {
-    const integration = await getGithubIntegration(projectId);
+    const octokitInstance = await getOctokitInstance(projectId);
 
-    if (!integration || !integration.isActive) {
+    if (!octokitInstance) {
       console.log("No active GitHub integration found for project:", projectId);
       return;
     }
 
-    const { repositoryOwner, repositoryName } = integration;
+    const {
+      octokit,
+      owner: repositoryOwner,
+      repo: repositoryName,
+    } = octokitInstance;
+
     console.log(
       "Creating GitHub issue for repository:",
       `${repositoryOwner}/${repositoryName}`,
     );
-
-    let installationId = integration.installationId;
-
-    if (!installationId) {
-      const { data: installation } =
-        await githubApp.octokit.rest.apps.getRepoInstallation({
-          owner: repositoryOwner,
-          repo: repositoryName,
-        });
-      installationId = installation.id;
-    }
-
-    const octokit = await githubApp.getInstallationOctokit(installationId);
 
     const createdIssue = await octokit.rest.issues.create({
       owner: repositoryOwner,

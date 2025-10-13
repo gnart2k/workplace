@@ -18,12 +18,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { VerifyGithubInstallationResponse } from "@/fetchers/github-integration/verify-github-installation";
 import {
   useCreateGithubIntegration,
   useDeleteGithubIntegration,
   useVerifyGithubInstallation,
 } from "@/hooks/mutations/github-integration/use-create-github-integration";
+import useCreatePatGithubIntegration from "@/hooks/mutations/github-integration/use-create-pat-github-integration";
 import useImportGithubIssues from "@/hooks/mutations/github-integration/use-import-github-issues";
 import useGetGithubIntegration from "@/hooks/queries/github-integration/use-get-github-integration";
 import { cn } from "@/lib/cn";
@@ -47,16 +49,50 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod/v4";
 
-const githubIntegrationSchema = z.object({
-  repositoryOwner: z
-    .string()
-    .min(1, "Repository owner is required")
-    .regex(/^[a-zA-Z0-9-]+$/, "Invalid repository owner format"),
-  repositoryName: z
-    .string()
-    .min(1, "Repository name is required")
-    .regex(/^[a-zA-Z0-9._-]+$/, "Invalid repository name format"),
-});
+const githubIntegrationSchema = z
+  .object({
+    connectionType: z.enum(["github_app", "pat"]),
+    repositoryOwner: z.string().optional(),
+    repositoryName: z.string().optional(),
+    repositoryUrl: z.string().optional(),
+    pat: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.connectionType === "github_app") {
+      if (!data.repositoryOwner) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Repository owner is required for GitHub App",
+          path: ["repositoryOwner"],
+        });
+      }
+      if (!data.repositoryName) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Repository name is required for GitHub App",
+          path: ["repositoryName"],
+        });
+      }
+    } else if (data.connectionType === "pat") {
+      if (
+        !data.repositoryUrl ||
+        !z.string().url().safeParse(data.repositoryUrl).success
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A valid repository URL is required for PAT connection",
+          path: ["repositoryUrl"],
+        });
+      }
+      if (!data.pat) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Personal Access Token is required",
+          path: ["pat"],
+        });
+      }
+    }
+  });
 
 type GithubIntegrationFormValues = z.infer<typeof githubIntegrationSchema>;
 
@@ -64,8 +100,11 @@ export function GitHubIntegrationSettings({
   projectId,
 }: { projectId: string }) {
   const { data: integration, isLoading } = useGetGithubIntegration(projectId);
-  const { mutateAsync: createIntegration, isPending: isCreating } =
+  const { mutateAsync: createIntegration, isPending: isCreatingApp } =
     useCreateGithubIntegration();
+  const { mutateAsync: createPatIntegration, isPending: isCreatingPat } =
+    useCreatePatGithubIntegration();
+  const isCreating = isCreatingApp || isCreatingPat;
   const { mutateAsync: deleteIntegration, isPending: isDeleting } =
     useDeleteGithubIntegration();
   const { mutateAsync: verifyInstallation, isPending: isVerifying } =
@@ -78,28 +117,42 @@ export function GitHubIntegrationSettings({
   const [showRepositoryBrowser, setShowRepositoryBrowser] =
     React.useState(false);
 
+  const defaultConnectionType = integration?.connectionType || "github_app";
+
   const form = useForm<GithubIntegrationFormValues>({
     resolver: standardSchemaResolver(githubIntegrationSchema),
     defaultValues: {
+      connectionType: defaultConnectionType,
       repositoryOwner: integration?.repositoryOwner || "",
       repositoryName: integration?.repositoryName || "",
+      repositoryUrl: "",
+      pat: "",
     },
   });
+
+  const connectionType = form.watch("connectionType");
+  const repositoryOwner = form.watch("repositoryOwner");
+  const repositoryName = form.watch("repositoryName");
 
   React.useEffect(() => {
     if (integration) {
       form.reset({
+        connectionType: integration.connectionType,
         repositoryOwner: integration.repositoryOwner,
         repositoryName: integration.repositoryName,
+        repositoryUrl: "",
+        pat: "",
       });
     }
   }, [integration, form]);
 
-  const repositoryOwner = form.watch("repositoryOwner");
-  const repositoryName = form.watch("repositoryName");
-
   const handleVerifyInstallation = React.useCallback(
-    async (data: GithubIntegrationFormValues, showToast = true) => {
+    async (
+      data: { repositoryOwner: string; repositoryName: string },
+      showToast = true,
+    ) => {
+      if (connectionType !== "github_app") return;
+
       try {
         const result = await verifyInstallation(data);
         setVerificationResult(result);
@@ -130,18 +183,30 @@ export function GitHubIntegrationSettings({
         setVerificationResult(null);
       }
     },
-    [verifyInstallation],
+    [verifyInstallation, connectionType],
   );
 
   React.useEffect(() => {
-    if (repositoryOwner && repositoryName && form.formState.isValid) {
-      handleVerifyInstallation({ repositoryOwner, repositoryName }, false);
+    if (
+      connectionType === "github_app" &&
+      repositoryOwner &&
+      repositoryName &&
+      form.formState.isValid
+    ) {
+      handleVerifyInstallation(
+        {
+          repositoryOwner: repositoryOwner as string,
+          repositoryName: repositoryName as string,
+        },
+        false,
+      );
     }
   }, [
     repositoryOwner,
     repositoryName,
     form.formState.isValid,
     handleVerifyInstallation,
+    connectionType,
   ]);
 
   const handleRepositorySelect = (repository: {
@@ -165,25 +230,39 @@ export function GitHubIntegrationSettings({
 
   const onSubmit = async (data: GithubIntegrationFormValues) => {
     try {
-      const verification = await verifyInstallation(data);
+      if (data.connectionType === "github_app") {
+        const appData = {
+          repositoryOwner: data.repositoryOwner as string,
+          repositoryName: data.repositoryName as string,
+        };
 
-      if (!verification.isInstalled) {
-        toast.error("Please install the GitHub App on this repository first");
-        return;
+        const verification = await verifyInstallation(appData);
+
+        if (!verification.isInstalled) {
+          toast.error("Please install the GitHub App on this repository first");
+          return;
+        }
+
+        if (!verification.hasRequiredPermissions) {
+          toast.error(
+            `GitHub App is missing required permissions: ${verification.missingPermissions?.join(", ") || "issues"}. Please update the app permissions.`,
+          );
+          return;
+        }
+
+        await createIntegration({
+          projectId,
+          data: appData,
+        });
+        toast.success("GitHub App integration updated successfully");
+      } else if (data.connectionType === "pat") {
+        await createPatIntegration({
+          projectId,
+          repositoryUrl: data.repositoryUrl as string,
+          pat: data.pat as string,
+        });
+        toast.success("PAT integration updated successfully");
       }
-
-      if (!verification.hasRequiredPermissions) {
-        toast.error(
-          `GitHub App is missing required permissions: ${verification.missingPermissions?.join(", ") || "issues"}. Please update the app permissions.`,
-        );
-        return;
-      }
-
-      await createIntegration({
-        projectId,
-        data,
-      });
-      toast.success("GitHub integration updated successfully");
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -196,7 +275,13 @@ export function GitHubIntegrationSettings({
   const handleDelete = async () => {
     try {
       await deleteIntegration(projectId);
-      form.reset({ repositoryOwner: "", repositoryName: "" });
+      form.reset({
+        connectionType: "github_app",
+        repositoryOwner: "",
+        repositoryName: "",
+        repositoryUrl: "",
+        pat: "",
+      });
       setVerificationResult(null);
       toast.success("GitHub integration removed successfully");
     } catch (error) {
@@ -249,6 +334,7 @@ export function GitHubIntegrationSettings({
   const isConnected = !!integration && integration.isActive;
   const canImport =
     isConnected &&
+    integration.connectionType === "github_app" &&
     verificationResult?.isInstalled &&
     verificationResult?.hasRequiredPermissions;
 
@@ -261,7 +347,8 @@ export function GitHubIntegrationSettings({
             {isConnected && (
               <Badge variant="secondary" className="gap-1">
                 <CheckCircle className="w-3 h-3" />
-                Connected
+                Connected via{" "}
+                {integration.connectionType === "pat" ? "PAT" : "GitHub App"}
               </Badge>
             )}
           </div>
@@ -284,31 +371,32 @@ export function GitHubIntegrationSettings({
                 </a>
               </div>
 
-              {verificationResult && (
-                <div className="flex items-center gap-2 text-sm">
-                  {verificationResult.isInstalled &&
-                  verificationResult.hasRequiredPermissions ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="text-green-700">
-                        App properly configured
-                      </span>
-                    </>
-                  ) : verificationResult.isInstalled ? (
-                    <>
-                      <AlertTriangle className="w-4 h-4 text-amber-600" />
-                      <span className="text-amber-700">
-                        Missing permissions
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-4 h-4 text-red-600" />
-                      <span className="text-red-700">App not installed</span>
-                    </>
-                  )}
-                </div>
-              )}
+              {integration.connectionType === "github_app" &&
+                verificationResult && (
+                  <div className="flex items-center gap-2 text-sm">
+                    {verificationResult.isInstalled &&
+                    verificationResult.hasRequiredPermissions ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-green-700">
+                          App properly configured
+                        </span>
+                      </>
+                    ) : verificationResult.isInstalled ? (
+                      <>
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <span className="text-amber-700">
+                          Missing permissions
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-4 h-4 text-red-600" />
+                        <span className="text-red-700">App not installed</span>
+                      </>
+                    )}
+                  </div>
+                )}
             </div>
           ) : (
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -332,74 +420,143 @@ export function GitHubIntegrationSettings({
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="repositoryOwner"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Repository Owner</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., octocat"
-                          {...field}
-                          disabled={isCreating || isDeleting}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        GitHub username or organization
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <Tabs
+                value={connectionType}
+                onValueChange={(value: string) =>
+                  form.setValue("connectionType", value as "github_app" | "pat")
+                }
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="github_app">GitHub App</TabsTrigger>
+                  <TabsTrigger value="pat">Personal Access Token</TabsTrigger>
+                </TabsList>
+                <TabsContent value="github_app" className="mt-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="repositoryOwner"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Repository Owner</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., octocat"
+                              {...field}
+                              disabled={isCreating || isDeleting}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            GitHub username or organization
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="repositoryName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Repository Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g., my-project"
-                          {...field}
-                          disabled={isCreating || isDeleting}
-                        />
-                      </FormControl>
-                      <FormDescription>The repository name</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                    <FormField
+                      control={form.control}
+                      name="repositoryName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Repository Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., my-project"
+                              {...field}
+                              disabled={isCreating || isDeleting}
+                            />
+                          </FormControl>
+                          <FormDescription>The repository name</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowRepositoryBrowser(true)}
-                  className="gap-2"
-                >
-                  <GitBranch className="w-4 h-4" />
-                  Browse
-                </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowRepositoryBrowser(true)}
+                      className="gap-2"
+                    >
+                      <GitBranch className="w-4 h-4" />
+                      Browse
+                    </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleVerifyInstallation(form.getValues())}
-                  disabled={isVerifying || !form.formState.isValid}
-                  className="gap-2"
-                >
-                  <RefreshCw
-                    className={cn("w-4 h-4", isVerifying && "animate-spin")}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleVerifyInstallation({
+                          repositoryOwner: form.getValues(
+                            "repositoryOwner",
+                          ) as string,
+                          repositoryName: form.getValues(
+                            "repositoryName",
+                          ) as string,
+                        })
+                      }
+                      disabled={isVerifying || !form.formState.isValid}
+                      className="gap-2"
+                    >
+                      <RefreshCw
+                        className={cn("w-4 h-4", isVerifying && "animate-spin")}
+                      />
+                      Verify
+                    </Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="pat" className="mt-4 space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="repositoryUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>GitHub Repository URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., https://github.com/kaneo/kaneo"
+                            {...field}
+                            disabled={isCreating || isDeleting}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          The full URL of the repository to connect.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  Verify
-                </Button>
+                  <FormField
+                    control={form.control}
+                    name="pat"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Personal Access Token (PAT)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="ghp_..."
+                            {...field}
+                            disabled={isCreating || isDeleting}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          A PAT with `repo` scope is required for
+                          synchronization.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+              </Tabs>
 
+              <div className="flex flex-wrap gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <Button
                   type="submit"
                   size="sm"
@@ -407,10 +564,11 @@ export function GitHubIntegrationSettings({
                     isCreating ||
                     isDeleting ||
                     !form.formState.isValid ||
-                    (verificationResult
-                      ? !verificationResult.isInstalled ||
-                        !verificationResult.hasRequiredPermissions
-                      : false)
+                    (connectionType === "github_app" &&
+                      (verificationResult
+                        ? !verificationResult.isInstalled ||
+                          !verificationResult.hasRequiredPermissions
+                        : false))
                   }
                   className="gap-2"
                 >
@@ -435,7 +593,7 @@ export function GitHubIntegrationSettings({
             </form>
           </Form>
 
-          {verificationResult && (
+          {connectionType === "github_app" && verificationResult && (
             <div className="mt-4">
               <div
                 className={cn(
