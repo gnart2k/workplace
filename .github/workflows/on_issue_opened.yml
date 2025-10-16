@@ -1,32 +1,43 @@
-name: Run local script when issue is opened
+name: Auto run local script for new issues
 
 on:
   issues:
-    types: [opened]  # Only trigger when issue is opened
+    types: [opened]
+
+env:
+  LOCAL_PROJECT_PATH: /Users/mac/se/project/kaneo   # <-- your real repo path
+  BRANCH_NAME: develop
 
 jobs:
-  run-local-script:
+  handle-auto-issue:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Execute local script
+      - name: Check if issue is auto-created
+        if: startsWith(github.event.issue.title, '[auto-created]')
         run: |
-          echo "📢 New issue detected: #${{ github.event.issue.number }}"
-          echo "📝 Title: ${{ github.event.issue.title }}"
-          echo "🧾 Body: ${{ github.event.issue.body }}"
+          echo "✅ Auto-created issue detected: ${{ github.event.issue.title }}"
 
-          mkdir -p ./scripts
-          cat <<'EOF' > ./scripts/on-issue-opened.sh
-          #!/bin/bash
-          echo "----------------------------------------"
-          echo "🚀 Issue Script Triggered"
-          echo "Title: $1"
-          echo "Body: $2"
-          echo "----------------------------------------"
-          EOF
+      - name: Pull latest code
+        if: startsWith(github.event.issue.title, '[auto-created]')
+        run: |
+          cd "$LOCAL_PROJECT_PATH"
+          echo "📦 Pulling latest code from $BRANCH_NAME..."
+          git checkout $BRANCH_NAME
+          git pull origin $BRANCH_NAME
 
-          chmod +x ./scripts/on-issue-opened.sh
-          ./scripts/on-issue-opened.sh "${{ github.event.issue.title }}" "${{ github.event.issue.body }}"
+      - name: Run opencode task
+        if: startsWith(github.event.issue.title, '[auto-created]')
+        run: |
+          cd "$LOCAL_PROJECT_PATH"
+          TITLE="${{ github.event.issue.title }}"
+          BODY="${{ github.event.issue.body }}"
+          echo "🚀 Running OpenCode task: $TITLE - $BODY"
+          opencode run "$TITLE - $BODY"
+
+      - name: Commit and push
+        if: startsWith(github.event.issue.title, '[auto-created]')
+        run: |
+          cd "$LOCAL_PROJECT_PATH"
+          echo "🪄 Running OpenCode commit and push..."
+          opencode run "commit and push" --continue
