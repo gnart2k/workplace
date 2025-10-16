@@ -73,7 +73,7 @@
 	"devDependencies": {
 		"@kaneo/libs": "workspace:*",
 		"@tailwindcss/postcss": "^4.1.8",
-		"@types/node": "^24.1.0",
+		"@types/node": "^24.7.2",
 		"@types/react": "^19.1.12",
 		"@types/react-dom": "^19.0.3",
 		"globals": "^16.0.0",
