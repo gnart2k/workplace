@@ -1,0 +1,21 @@
+name: Run local script when issue is opened
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  run-local-script:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Execute local script
+        run: |
+          echo "New issue detected: #${{ github.event.issue.number }}"
+          mkdir -p ./scripts
+          echo '#!/bin/bash' > ./scripts/on-issue-opened.sh
+          echo 'echo "Issue Title: $1"' >> ./scripts/on-issue-opened
+          chmod +x ./scripts/on-issue-opened.sh
+          ./scripts/on-issue-opened.sh "${{ github.event.issue.title }}" "${{ github.event.issue.body }}"
