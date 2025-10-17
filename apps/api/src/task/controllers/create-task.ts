@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { taskTable, userTable } from "../../database/schema";
@@ -22,6 +22,17 @@ async function createTask({
   description?: string;
   priority?: string;
 }) {
+  const [existingTask] = await db
+    .select({ id: taskTable.id })
+    .from(taskTable)
+    .where(and(eq(taskTable.projectId, projectId), eq(taskTable.title, title)));
+
+  if (existingTask) {
+    throw new HTTPException(409, {
+      message: "Task with the same title already exists in this project",
+    });
+  }
+
   const [assignee] = await db
     .select({ name: userTable.name })
     .from(userTable)
