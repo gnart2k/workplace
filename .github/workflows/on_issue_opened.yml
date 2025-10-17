@@ -5,8 +5,7 @@ on:
     types: [opened]
 
 env:
-  LOCAL_PROJECT_PATH: /Users/mac/se/project/kaneo   # <-- your real repo path
-  BRANCH_NAME: develop
+  LOCAL_PROJECT_PATH: /Users/mac/se/project/kaneo
 
 jobs:
   handle-auto-issue:
@@ -18,13 +17,33 @@ jobs:
         run: |
           echo "✅ Auto-created issue detected: ${{ github.event.issue.title }}"
 
-      - name: Pull latest code
+      - name: Determine branch name
+        id: branch
+        if: startsWith(github.event.issue.title, '[auto-created]')
+        run: |
+          echo "📄 Issue body: ${{ github.event.issue.body }}"
+          # Try to extract branch name from issue body like: branch: feature/my-task
+          BRANCH_NAME=$(echo "${{ github.event.issue.body }}" | grep -oP '(?<=branch:\s*)[^\s]+' || true)
+          if [ -z "$BRANCH_NAME" ]; then
+            echo "⚠️ No branch specified, defaulting to 'develop'"
+            BRANCH_NAME="develop"
+          fi
+          echo "📦 Using branch: $BRANCH_NAME"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Pull latest code from target branch
         if: startsWith(github.event.issue.title, '[auto-created]')
         run: |
           cd "$LOCAL_PROJECT_PATH"
           echo "📦 Pulling latest code from $BRANCH_NAME..."
-          git checkout $BRANCH_NAME
-          git pull origin $BRANCH_NAME
+          git fetch origin
+          if git rev-parse --verify "$BRANCH_NAME"; then
+            git checkout "$BRANCH_NAME"
+          else
+            echo "🆕 Branch $BRANCH_NAME not found locally, creating from origin/$BRANCH_NAME"
+            git checkout -b "$BRANCH_NAME" "origin/$BRANCH_NAME" || git checkout -b "$BRANCH_NAME" develop
+          fi
+          git pull origin "$BRANCH_NAME"
 
       - name: Run opencode task
         if: startsWith(github.event.issue.title, '[auto-created]')
@@ -33,9 +52,9 @@ jobs:
           TITLE="${{ github.event.issue.title }}"
           BODY="${{ github.event.issue.body }}"
           echo "🚀 Running OpenCode task: $TITLE - $BODY"
-          opencode run "$TITLE - $BODY"
+          opencode run "Fix the following issue $TITLE - $BODY"
 
-      - name: Commit and push
+      - name: Commit and push changes
         if: startsWith(github.event.issue.title, '[auto-created]')
         run: |
           cd "$LOCAL_PROJECT_PATH"

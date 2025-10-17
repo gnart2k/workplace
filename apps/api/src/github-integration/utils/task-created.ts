@@ -47,8 +47,8 @@ export async function handleTaskCreated(data: {
     const createdIssue = await octokit.rest.issues.create({
       owner: repositoryOwner,
       repo: repositoryName,
-      title: `[auto-create] ${title}`,
-      body: `**Task created in Kaneo**
+      title: `${title}`,
+      body: `**Task created in Workplace**
 
 **Description:** ${description || "No description provided"}
 
