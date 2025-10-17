@@ -45,6 +45,7 @@ export function NavMain() {
   const currentPath = window.location.pathname;
   const isBoard = currentPath.includes("/board");
   const isBacklog = currentPath.includes("/backlog");
+  const isGantt = currentPath.includes("/gantt");
 
   const navItems = [
     {
@@ -97,7 +98,7 @@ export function NavMain() {
     navigate({ to: url });
   };
 
-  const handleViewChange = (view: "board" | "backlog") => {
+  const handleViewChange = (view: "board" | "backlog" | "gantt") => {
     if (!currentProjectId) return;
     navigate({
       to: `/dashboard/workspace/$workspaceId/project/$projectId/${view}`,
@@ -152,6 +153,8 @@ export function NavMain() {
                     <div className="flex items-center gap-2">
                       {isBoard ? (
                         <LayoutGrid className="w-4 h-4" />
+                      ) : isGantt ? (
+                        <BarChart3 className="w-4 h-4" />
                       ) : (
                         <Calendar className="w-4 h-4" />
                       )}
@@ -178,6 +181,16 @@ export function NavMain() {
                     <Calendar className="w-4 h-4 mr-2" />
                     Backlog
                     {isBacklog && (
+                      <div className="ml-auto w-2 h-2 bg-primary rounded-full" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleViewChange("gantt")}
+                    className={cn("cursor-pointer", isGantt && "bg-accent")}
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Gantt Chart
+                    {isGantt && (
                       <div className="ml-auto w-2 h-2 bg-primary rounded-full" />
                     )}
                   </DropdownMenuItem>

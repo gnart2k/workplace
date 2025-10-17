@@ -4,6 +4,7 @@ import { z } from "zod";
 import createTask from "./controllers/create-task";
 import deleteTask from "./controllers/delete-task";
 import exportTasks from "./controllers/export-tasks";
+import getGanttTasks from "./controllers/get-gantt-tasks";
 import getTask from "./controllers/get-task";
 import getTasks from "./controllers/get-tasks";
 import importTasks from "./controllers/import-tasks";
@@ -21,6 +22,17 @@ const task = new Hono<{
       const { projectId } = c.req.valid("param");
 
       const tasks = await getTasks(projectId);
+
+      return c.json(tasks);
+    },
+  )
+  .get(
+    "/tasks/:projectId/gantt",
+    zValidator("param", z.object({ projectId: z.string() })),
+    async (c) => {
+      const { projectId } = c.req.valid("param");
+
+      const tasks = await getGanttTasks(projectId);
 
       return c.json(tasks);
     },
