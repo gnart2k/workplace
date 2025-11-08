@@ -11,6 +11,7 @@ async function createTask({
   title,
   status,
   dueDate,
+  startDate,
   description,
   priority,
 }: {
@@ -19,6 +20,7 @@ async function createTask({
   title: string;
   status: string;
   dueDate?: Date;
+  startDate?: Date;
   description?: string;
   priority?: string;
 }) {
@@ -48,6 +50,7 @@ async function createTask({
       title: title || "",
       status: status || "",
       dueDate: dueDate || new Date(),
+      startDate: startDate || new Date(),
       description: description || "",
       priority: priority || "",
       number: nextTaskNumber + 1,

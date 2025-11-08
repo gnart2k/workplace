@@ -96,6 +96,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("low");
   const [assigneeId, setAssigneeId] = useState("");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [createMore, setCreateMore] = useState(false);
   const [labels, setLabels] = useState<Label[]>([]);
@@ -118,6 +119,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
     setDescription("");
     setPriority("low");
     setAssigneeId("");
+    setStartDate(undefined);
     setDueDate(undefined);
     setCreateMore(false);
     setLabels([]);
@@ -157,6 +159,9 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
         userId: assigneeId,
         priority,
         projectId: project?.id,
+        startDate: startDate
+          ? startDate.toISOString()
+          : new Date().toISOString(),
         dueDate: dueDate ? dueDate.toISOString() : new Date().toISOString(),
         status: taskStatus,
       });
@@ -207,6 +212,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
         setDescription("");
         setPriority("low");
         setAssigneeId("");
+        setStartDate(undefined);
         setDueDate(undefined);
         setLabels([]);
         setSearchValue("");
@@ -407,7 +413,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
                 <div className="w-1.5 h-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 dark:from-amber-400 dark:to-yellow-400 rounded-full shadow-sm" />
                 {status
                   ? status.charAt(0).toUpperCase() +
-                    status.slice(1).replace("-", " ")
+                  status.slice(1).replace("-", " ")
                   : "In Progress"}
               </div>
 
@@ -447,6 +453,49 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
                       </button>
                     ))}
                   </div>
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-all duration-200 hover:scale-105 border",
+                      startDate
+                        ? "text-blue-300 bg-blue-500/10 border-blue-500/30"
+                        : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 border-zinc-300 dark:border-zinc-700/50",
+                    )}
+                  >
+                    <CalendarIcon className="w-3.5 h-3.5" />
+                    <span>
+                      {startDate
+                        ? format(startDate, "MMM d, yyyy")
+                        : "Start date"}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    className="rounded-md border-0"
+                  />
+                  {startDate && (
+                    <div className="flex justify-between items-center pt-3 border-t border-zinc-200 dark:border-zinc-800/50 mt-3">
+                      <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                        {format(startDate, "EEEE, MMMM d, yyyy")}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setStartDate(undefined)}
+                        className="text-xs text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
                 </PopoverContent>
               </Popover>
 
@@ -654,7 +703,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
                                   className={cn(
                                     "flex items-center px-3 py-2 text-sm text-left text-zinc-900 dark:text-zinc-200 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800",
                                     selectedColor === color.value &&
-                                      "bg-zinc-100 dark:bg-zinc-800",
+                                    "bg-zinc-100 dark:bg-zinc-800",
                                   )}
                                   onClick={() => {
                                     setSelectedColor(color.value);

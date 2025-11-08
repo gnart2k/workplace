@@ -11,6 +11,7 @@ function useCreateTask() {
       userId,
       projectId,
       status,
+      startDate,
       dueDate,
       priority,
     }: CreateTaskRequest) =>
@@ -20,6 +21,7 @@ function useCreateTask() {
         projectId,
         userId ?? "",
         status,
+        new Date(startDate),
         new Date(dueDate),
         priority,
       ),

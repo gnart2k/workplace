@@ -12,16 +12,21 @@ type SelectSingleEventHandler = (date: Date | undefined) => void;
 function TaskCalendar({
   field,
   onChange,
+  label,
 }: {
-  field: ControllerRenderProps<z.infer<typeof taskInfoSchema>, "dueDate">;
+  field: ControllerRenderProps<
+    z.infer<typeof taskInfoSchema>,
+    "dueDate" | "startDate"
+  >;
   onChange: SelectSingleEventHandler;
+  label: string;
 }) {
   const { value } = field;
 
   return (
     <div className="w-full">
       <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-300 mb-2">
-        Due Date
+        {label}
       </h3>
       <Popover>
         <PopoverTrigger asChild>

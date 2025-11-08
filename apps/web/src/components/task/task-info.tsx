@@ -35,6 +35,7 @@ export const taskInfoSchema = z.object({
   status: z.string(),
   userId: z.string(),
   priority: z.string(),
+  startDate: z.date(),
   dueDate: z.date(),
 });
 
@@ -60,6 +61,7 @@ function TaskInfo({
       status: task?.status || "",
       userId: task?.userId || "",
       priority: task?.priority || "",
+      startDate: task?.startDate ? new Date(task.startDate) : new Date(),
       dueDate: task?.dueDate ? new Date(task.dueDate) : new Date(),
     },
   });
@@ -74,6 +76,7 @@ function TaskInfo({
         userId: data.userId,
         status: data.status || "",
         priority: data.priority || "",
+        startDate: data.startDate.toISOString(),
         dueDate: data.dueDate.toISOString(),
         projectId: project?.id || "",
       });
@@ -206,10 +209,28 @@ function TaskInfo({
           />
           <FormField
             control={form.control}
+            name="startDate"
+            render={({ field }) => (
+              <TaskCalendar
+                field={field}
+                label="Start Date"
+                onChange={(value) => {
+                  field.onChange(value);
+                  handleChange({
+                    ...form.getValues(),
+                    startDate: value ?? new Date(),
+                  });
+                }}
+              />
+            )}
+          />
+          <FormField
+            control={form.control}
             name="dueDate"
             render={({ field }) => (
               <TaskCalendar
                 field={field}
+                label="Start Date"
                 onChange={(value) => {
                   field.onChange(value);
                   handleChange({
