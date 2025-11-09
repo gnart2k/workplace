@@ -25,9 +25,12 @@ import {
 import { shortcuts } from "@/constants/shortcuts";
 import useClearNotifications from "@/hooks/mutations/notification/use-clear-notifications";
 import useMarkAllNotificationsAsRead from "@/hooks/mutations/notification/use-mark-all-notifications-as-read";
+import useMarkNotificationAsRead from "@/hooks/mutations/notification/use-mark-notification-as-read";
 import useGetNotifications from "@/hooks/queries/notification/use-get-notifications";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { cn } from "@/lib/cn";
+import type { Notification } from "@/types/notification";
+import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { Bell } from "lucide-react";
 import { forwardRef, useImperativeHandle, useState } from "react";
@@ -43,10 +46,26 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
     const [showClearDialog, setShowClearDialog] = useState(false);
 
     const { mutate: markAllAsRead } = useMarkAllNotificationsAsRead();
+    const { mutate: markAsRead } = useMarkNotificationAsRead();
     const { mutate: clearAll } = useClearNotifications();
 
     const unreadNotifications = notifications?.filter((n) => !n.isRead) || [];
     const hasNotifications = notifications && notifications.length > 0;
+
+    const getNotificationPath = (notification: Notification) => {
+      const n = notification as Notification & {
+        projectId?: string | null;
+        workspaceId?: string | null;
+      };
+
+      if (n.resourceType === "task" && n.projectId && n.workspaceId) {
+        return `/dashboard/workspace/${n.workspaceId}/project/${n.projectId}/task/${n.resourceId}`;
+      }
+      if (n.resourceType === "workspace" && n.resourceId) {
+        return `/dashboard/workspace/${n.resourceId}`;
+      }
+      return undefined;
+    };
 
     useImperativeHandle(ref, () => ({
       toggle: () => setIsOpen(!isOpen),
@@ -130,38 +149,51 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                 </div>
               ) : (
                 <>
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={cn(
-                        "px-3 py-3 border-b border-border/50 hover:bg-accent/50 transition-colors",
-                        !notification.isRead && "bg-accent/20",
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="text-sm font-medium text-foreground">
-                              {notification.title}
-                            </h4>
-                            {!notification.isRead && (
-                              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                  {notifications.map((notification) => {
+                    const path = getNotificationPath(notification);
+                    const Component = path ? Link : "div";
+
+                    return (
+                      <Component
+                        key={notification.id}
+                        to={path}
+                        onClick={() => {
+                          if (!notification.isRead) {
+                            markAsRead(notification.id);
+                          }
+                          setIsOpen(false);
+                        }}
+                        className={cn(
+                          "px-3 py-3 border-b border-border/50 transition-colors",
+                          path && "cursor-pointer hover:bg-accent/50",
+                          !notification.isRead && "bg-accent/20",
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="text-sm font-medium text-foreground">
+                                {notification.title}
+                              </h4>
+                              {!notification.isRead && (
+                                <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                              )}
+                            </div>
+                            {notification.content && (
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {notification.content}
+                              </p>
                             )}
-                          </div>
-                          {notification.content && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {notification.content}
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {formatDistanceToNow(notification.createdAt, {
+                                addSuffix: true,
+                              })}
                             </p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {formatDistanceToNow(notification.createdAt, {
-                              addSuffix: true,
-                            })}
-                          </p>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
+                      </Component>
+                    );
+                  })}
                 </>
               )}
             </div>

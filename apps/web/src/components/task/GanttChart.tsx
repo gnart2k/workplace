@@ -38,27 +38,44 @@ interface GanttChartProps {
 
 export default function GanttChart({ tasks }: GanttChartProps) {
   const ganttTasks: Task[] = useMemo(() => {
-    return tasks.map((task) => {
-      const startDate = new Date(task.startDate);
-      const endDate = task.endDate ? new Date(task.endDate) : startDate;
-      const isCompleted =
-        task.status.toLowerCase() === "done" ||
-        task.status.toLowerCase() === "completed";
+    return tasks
+      .filter((t) => t.startDate && t.endDate) // still good
+      .map((task) => {
+        let startDate: Date;
+        let endDate: Date;
 
-      return {
-        start: startDate,
-        end: endDate,
-        name: task.title,
-        id: task.id,
-        type: "task",
-        progress: isCompleted ? 100 : 0,
-        isDisabled: false,
-        styles: getTaskStyle(task.status),
-        project: task.assignee?.name || "Unassigned",
-        displayOrder: 1,
-      };
-    });
+        try {
+          startDate = new Date(task.startDate ?? "");
+          if (Number.isNaN(startDate.getTime())) startDate = new Date();
+
+          endDate = new Date(task.endDate ?? "");
+          if (Number.isNaN(endDate.getTime())) endDate = startDate;
+        } catch {
+          // Fallback in case task.startDate is something unexpected
+          startDate = new Date();
+          endDate = new Date();
+        }
+
+        const isCompleted =
+          task.status?.toLowerCase() === "done" ||
+          task.status?.toLowerCase() === "completed";
+
+        return {
+          start: startDate,
+          end: endDate,
+          name: task.title ?? "Untitled task",
+          id: task.id ?? crypto.randomUUID(),
+          type: "task",
+          progress: isCompleted ? 100 : 0,
+          isDisabled: false,
+          styles: getTaskStyle(task.status),
+          project: task.assignee?.name || "Unassigned",
+          displayOrder: 1,
+        };
+      });
   }, [tasks]);
+
+  console.log(tasks);
 
   if (ganttTasks.length === 0) {
     return (
