@@ -30,6 +30,7 @@ async function getTasks(projectId: string) {
       status: taskTable.status,
       priority: taskTable.priority,
       dueDate: taskTable.dueDate,
+      startDate: taskTable.startDate,
       position: taskTable.position,
       createdAt: taskTable.createdAt,
       userId: taskTable.userId,

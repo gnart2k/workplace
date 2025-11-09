@@ -11,6 +11,7 @@ async function updateTask(taskId: string, task: Task) {
       status: task.status,
       priority: task.priority || "",
       dueDate: task.dueDate?.toString() || new Date().toString(),
+      startDate: task.startDate?.toString() || new Date().toString(),
       position: task.position || 0,
       projectId: task.projectId,
     },

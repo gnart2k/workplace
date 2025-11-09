@@ -413,7 +413,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
                 <div className="w-1.5 h-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 dark:from-amber-400 dark:to-yellow-400 rounded-full shadow-sm" />
                 {status
                   ? status.charAt(0).toUpperCase() +
-                  status.slice(1).replace("-", " ")
+                    status.slice(1).replace("-", " ")
                   : "In Progress"}
               </div>
 
@@ -703,7 +703,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
                                   className={cn(
                                     "flex items-center px-3 py-2 text-sm text-left text-zinc-900 dark:text-zinc-200 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800",
                                     selectedColor === color.value &&
-                                    "bg-zinc-100 dark:bg-zinc-800",
+                                      "bg-zinc-100 dark:bg-zinc-800",
                                   )}
                                   onClick={() => {
                                     setSelectedColor(color.value);

@@ -21,8 +21,8 @@ function useCreateTask() {
         projectId,
         userId ?? "",
         status,
-        new Date(startDate),
-        new Date(dueDate),
+        startDate ? new Date(startDate) : new Date(),
+        dueDate ? new Date(dueDate) : new Date(),
         priority,
       ),
   });

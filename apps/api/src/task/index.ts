@@ -45,6 +45,7 @@ const task = new Hono<{
         title: z.string(),
         description: z.string(),
         dueDate: z.string(),
+        startDate: z.string().optional(),
         priority: z.string(),
         status: z.string(),
         userId: z.string().optional(),
@@ -52,7 +53,7 @@ const task = new Hono<{
     ),
     async (c) => {
       const { projectId } = c.req.param();
-      const { title, description, dueDate, priority, status, userId } =
+      const { title, description, dueDate, startDate, priority, status, userId } =
         c.req.valid("json");
 
       const task = await createTask({
@@ -61,6 +62,7 @@ const task = new Hono<{
         title,
         description,
         dueDate: new Date(dueDate),
+        startDate: startDate ? new Date(startDate) : undefined,
         priority,
         status,
       });
@@ -84,6 +86,7 @@ const task = new Hono<{
         title: z.string(),
         description: z.string(),
         dueDate: z.string(),
+        startDate: z.string(),
         priority: z.string(),
         status: z.string(),
         projectId: z.string(),
@@ -97,6 +100,7 @@ const task = new Hono<{
         title,
         description,
         dueDate,
+        startDate,
         priority,
         status,
         projectId,
@@ -109,6 +113,7 @@ const task = new Hono<{
         title,
         status,
         new Date(dueDate),
+        new Date(startDate),
         projectId,
         description,
         priority,
