@@ -9,6 +9,8 @@ import getTask from "./controllers/get-task";
 import getTasks from "./controllers/get-tasks";
 import importTasks from "./controllers/import-tasks";
 import updateTask from "./controllers/update-task";
+import canCreateTask from "./middlewares/can-create-task";
+import canUpdateTask from "./middlewares/can-update-task";
 
 const task = new Hono<{
   Variables: {
@@ -39,6 +41,8 @@ const task = new Hono<{
   )
   .post(
     "/:projectId",
+    zValidator("param", z.object({ projectId: z.string() })),
+    canCreateTask,
     zValidator(
       "json",
       z.object({
@@ -53,8 +57,15 @@ const task = new Hono<{
     ),
     async (c) => {
       const { projectId } = c.req.param();
-      const { title, description, dueDate, startDate, priority, status, userId } =
-        c.req.valid("json");
+      const {
+        title,
+        description,
+        dueDate,
+        startDate,
+        priority,
+        status,
+        userId,
+      } = c.req.valid("json");
 
       const task = await createTask({
         projectId,
@@ -79,6 +90,8 @@ const task = new Hono<{
   })
   .put(
     "/:id",
+    zValidator("param", z.object({ id: z.string() })),
+    canUpdateTask,
     zValidator("param", z.object({ id: z.string() })),
     zValidator(
       "json",
@@ -137,6 +150,7 @@ const task = new Hono<{
   )
   .post(
     "/import/:projectId",
+    canCreateTask,
     zValidator("param", z.object({ projectId: z.string() })),
     zValidator(
       "json",
@@ -164,6 +178,8 @@ const task = new Hono<{
   )
   .delete(
     "/:id",
+    zValidator("param", z.object({ id: z.string() })),
+    canUpdateTask,
     zValidator("param", z.object({ id: z.string() })),
     async (c) => {
       const { id } = c.req.valid("param");
