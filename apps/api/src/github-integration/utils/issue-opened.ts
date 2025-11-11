@@ -3,6 +3,7 @@ import type {
   EmitterWebhookEventName,
 } from "@octokit/webhooks";
 import type { Octokit } from "octokit";
+import db from "../../database";
 import createTask from "../../task/controllers/create-task";
 import getGithubIntegrationByRepositoryId from "../controllers/get-github-integration-by-repository-id";
 import { addLabelsToIssue } from "./create-github-labels";
@@ -44,6 +45,22 @@ export const handleIssueOpened: HandlerFunction<
     const taskPriority = extractIssuePriority(payload.issue.labels);
     const taskStatus = extractIssueStatus(payload.issue.labels);
 
+    const project = await db.query.projectTable.findFirst({
+      where: (project, { eq }) => eq(project.id, integration.projectId),
+    });
+
+    if (!project) {
+      throw new Error("Project not found for the integration");
+    }
+
+    const workspace = await db.query.workspaceTable.findFirst({
+      where: (workspace, { eq }) => eq(workspace.id, project.workspaceId),
+    });
+
+    if (!workspace) {
+      throw new Error("Workspace not found for the project");
+    }
+
     const task = await createTask({
       projectId: integration.projectId,
       title: payload.issue.title,
@@ -58,6 +75,7 @@ export const handleIssueOpened: HandlerFunction<
       priority: taskPriority,
       dueDate: new Date(),
       userId: undefined,
+      authorId: workspace.ownerId,
     });
 
     const existingLabels =

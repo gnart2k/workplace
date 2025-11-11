@@ -50,6 +50,20 @@
 			"when": 1762521258700,
 			"tag": "0006_heavy_white_queen",
 			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "7",
+			"when": 1762787107746,
+			"tag": "0007_familiar_skrulls",
+			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "7",
+			"when": 1762787143406,
+			"tag": "0008_windy_talkback",
+			"breakpoints": true
 		}
 	]
 }
