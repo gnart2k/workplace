@@ -49,3 +49,4 @@ const canUpdateTask: MiddlewareHandler<{
 };
 
 export default canUpdateTask;
+

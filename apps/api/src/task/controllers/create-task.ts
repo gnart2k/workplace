@@ -14,7 +14,6 @@ async function createTask({
   startDate,
   description,
   priority,
-  authorId,
 }: {
   projectId: string;
   userId?: string;
@@ -24,7 +23,6 @@ async function createTask({
   startDate?: Date;
   description?: string;
   priority?: string;
-  authorId: string;
 }) {
   const [existingTask] = await db
     .select({ id: taskTable.id })
@@ -56,7 +54,6 @@ async function createTask({
       description: description || "",
       priority: priority || "",
       number: nextTaskNumber + 1,
-      authorId,
     })
     .returning();
 

@@ -67,7 +67,6 @@ const task = new Hono<{
         userId,
       } = c.req.valid("json");
 
-      const userIdFromContext = c.get("userId");
       const task = await createTask({
         projectId,
         userId,
@@ -77,7 +76,6 @@ const task = new Hono<{
         startDate: startDate ? new Date(startDate) : undefined,
         priority,
         status,
-        authorId: userIdFromContext,
       });
 
       return c.json(task);
