@@ -1,20 +1,10 @@
 import { client } from "@kaneo/libs";
 import { useQuery } from "@tanstack/react-query";
 
-export type GanttTask = {
-  id: string;
-  title: string;
-  status: string;
-  startDate: string | null; // Dates are serialized as strings
-  endDate: string | null; // Dates are serialized as strings
-  dependencies: string[];
-  assignee: {
-    id: string;
-    name: string;
-  } | null;
-};
+import type Task from "@/types/task";
+import type { GanttApiTask } from "@/types/task";
 
-async function getGanttTasks(projectId: string): Promise<GanttTask[]> {
+async function getGanttTasks(projectId: string): Promise<GanttApiTask[]> {
   const response = await client.task.tasks[":projectId"].gantt.$get({
     param: { projectId },
   });
@@ -27,7 +17,7 @@ async function getGanttTasks(projectId: string): Promise<GanttTask[]> {
   const data = await response.json();
 
   // The response from the backend is an array of GanttTask objects
-  return data as GanttTask[];
+  return data as GanttApiTask[];
 }
 
 export function useGanttTasks(projectId: string) {

@@ -2,6 +2,7 @@ import { useGenerateTaskDescription } from "@/fetchers/use-generate-task-descrip
 import useUpdateTask from "@/hooks/mutations/task/use-update-task";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { Route } from "@/routes/_layout/_authenticated/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId_";
+import type Task from "@/types/task";
 import { Sparkles } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -56,7 +57,7 @@ function TaskDescription({ setIsSaving, isSaving }: TaskDescriptionProps) {
 
     setIsSaving(true);
     await updateTask({
-      ...task,
+      ...(task as Task),
       description: form.getValues("description"),
       userId: task.userId || "",
       title: task.title || "",
@@ -64,6 +65,7 @@ function TaskDescription({ setIsSaving, isSaving }: TaskDescriptionProps) {
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
       priority: task.priority || "",
       position: task.position || 0,
+      dependsOn: (task as Task).dependsOn || [],
     });
     setIsSaving(false);
     form.reset(form.getValues());

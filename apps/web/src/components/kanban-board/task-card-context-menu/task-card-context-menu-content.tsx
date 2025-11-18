@@ -70,7 +70,9 @@ export default function TaskCardContextMenuContent({
     workspaceId: taskCardContext.worskpaceId,
   });
   const { mutateAsync: updateTask } = useUpdateTask();
-  const { mutateAsync: createTask } = useCreateTask();
+  const { mutateAsync: createTask } = useCreateTask(
+    taskCardContext.worskpaceId,
+  );
   const { mutateAsync: deleteTask } = useDeleteTask();
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
 

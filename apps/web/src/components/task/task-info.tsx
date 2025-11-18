@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Select,
   SelectContent,
@@ -19,12 +20,13 @@ import {
 } from "@/components/ui/select";
 import useDeleteTask from "@/hooks/mutations/task/use-delete-task";
 import useUpdateTask from "@/hooks/mutations/task/use-update-task";
+import useGetTasks from "@/hooks/queries/task/use-get-tasks";
 import useGetActiveWorkspaceUsers from "@/hooks/queries/workspace-users/use-active-workspace-users";
 import useProjectStore from "@/store/project";
 import type Task from "@/types/task";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod/v4";
@@ -35,8 +37,9 @@ export const taskInfoSchema = z.object({
   status: z.string(),
   userId: z.string(),
   priority: z.string(),
-  startDate: z.date(),
-  dueDate: z.date(),
+  startDate: z.string().nullable(),
+  dueDate: z.string().nullable(),
+  dependsOn: z.array(z.string()),
 });
 
 function TaskInfo({
@@ -52,21 +55,34 @@ function TaskInfo({
   const { data: workspaceUsers } = useGetActiveWorkspaceUsers({
     workspaceId: project?.workspaceId ?? "",
   });
+  const { data: projectData } = useGetTasks(project?.id ?? "");
+
+  const allProjectTasks = useMemo(() => {
+    if (!projectData) return [];
+    const tasksFromColumns =
+      projectData.columns?.flatMap((column) => column.tasks) || [];
+    return [
+      ...tasksFromColumns,
+      ...(projectData.archivedTasks || []),
+      ...(projectData.plannedTasks || []),
+    ];
+  }, [projectData]);
   const { mutateAsync: updateTask } = useUpdateTask();
   const { mutateAsync: deleteTask, isPending: isDeleting } = useDeleteTask();
   const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof taskInfoSchema>>({
+  const form = useForm<Task>({
     defaultValues: {
       status: task?.status || "",
       userId: task?.userId || "",
       priority: task?.priority || "",
-      startDate: task?.startDate ? new Date(task.startDate) : new Date(),
-      dueDate: task?.dueDate ? new Date(task.dueDate) : new Date(),
+      startDate: task?.startDate || null,
+      dueDate: task?.dueDate || null,
+      dependsOn: task?.dependsOn || [],
     },
   });
 
-  const handleChange = async (data: z.infer<typeof taskInfoSchema>) => {
+  const handleChange = async (data: Task) => {
     if (!task) return;
 
     setIsSaving(true);
@@ -76,8 +92,11 @@ function TaskInfo({
         userId: data.userId,
         status: data.status || "",
         priority: data.priority || "",
-        startDate: data.startDate.toISOString(),
-        dueDate: data.dueDate.toISOString(),
+        startDate: data.startDate
+          ? new Date(data.startDate).toISOString()
+          : null,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+        dependsOn: data.dependsOn,
         projectId: project?.id || "",
       });
       toast.success("Task updated successfully");
@@ -158,7 +177,7 @@ function TaskInfo({
               <FormItem>
                 <FormLabel>Assign to</FormLabel>
                 <Select
-                  value={field.value}
+                  value={field.value ?? ""}
                   onValueChange={(value) => {
                     field.onChange(value);
                     handleChange({ ...form.getValues(), userId: value });
@@ -218,7 +237,7 @@ function TaskInfo({
                   field.onChange(value);
                   handleChange({
                     ...form.getValues(),
-                    startDate: value ?? new Date(),
+                    startDate: value?.toISOString() ?? null,
                   });
                 }}
               />
@@ -235,10 +254,35 @@ function TaskInfo({
                   field.onChange(value);
                   handleChange({
                     ...form.getValues(),
-                    dueDate: value ?? new Date(),
+                    dueDate: value?.toISOString() ?? null,
                   });
                 }}
               />
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="dependsOn"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Depends on</FormLabel>
+                <MultiSelect
+                  options={
+                    allProjectTasks
+                      .filter((t: Task) => t.id !== task.id)
+                      .map((t: Task) => ({
+                        value: t.id,
+                        label: t.title,
+                      })) ?? []
+                  }
+                  selected={field.value ?? []}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    handleChange({ ...form.getValues(), dependsOn: value });
+                  }}
+                  placeholder="Select tasks"
+                />
+              </FormItem>
             )}
           />
           <TaskLabels taskId={task.id} setIsSaving={setIsSaving} />

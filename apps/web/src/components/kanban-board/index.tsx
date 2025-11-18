@@ -1,6 +1,7 @@
 import useUpdateTask from "@/hooks/mutations/task/use-update-task";
 import useProjectStore from "@/store/project";
 import type { ProjectWithTasks } from "@/types/project";
+import type Task from "@/types/task";
 import {
   DndContext,
   type DragEndEvent,
@@ -72,32 +73,35 @@ function KanbanBoard({ project }: KanbanBoardProps) {
 
     const updatedProject = produce(project, (draft) => {
       const sourceColumn = draft?.columns?.find((col) =>
-        col.tasks.some((task) => task.id === activeId),
+        col.tasks.some((task: Task) => task.id === activeId),
       );
       const destinationColumn = draft?.columns?.find(
         (col) =>
-          col.id === overId || col.tasks.some((task) => task.id === overId),
+          col.id === overId ||
+          col.tasks.some((task: Task) => task.id === overId),
       );
 
       if (!sourceColumn || !destinationColumn) return;
 
       const sourceTaskIndex = sourceColumn.tasks.findIndex(
-        (task) => task.id === activeId,
+        (task: Task) => task.id === activeId,
       );
-      const task = sourceColumn.tasks[sourceTaskIndex];
+      const task: Task = sourceColumn.tasks[sourceTaskIndex];
 
-      sourceColumn.tasks = sourceColumn.tasks.filter((t) => t.id !== activeId);
+      sourceColumn.tasks = sourceColumn.tasks.filter(
+        (t: Task) => t.id !== activeId,
+      );
 
       if (sourceColumn.id === destinationColumn.id) {
         let destinationIndex = destinationColumn.tasks.findIndex(
-          (t) => t.id === overId,
+          (t: Task) => t.id === overId,
         );
         if (sourceTaskIndex <= destinationIndex) {
           destinationIndex += 1;
         }
         destinationColumn.tasks.splice(destinationIndex, 0, task);
 
-        destinationColumn.tasks.forEach((t, index) => {
+        destinationColumn.tasks.forEach((t: Task, index: number) => {
           updateTask({ ...t, position: index + 1 });
         });
 
@@ -109,11 +113,11 @@ function KanbanBoard({ project }: KanbanBoardProps) {
         const destinationIndex =
           overId === destinationColumn.id
             ? destinationColumn.tasks.length
-            : destinationColumn.tasks.findIndex((t) => t.id === overId);
+            : destinationColumn.tasks.findIndex((t: Task) => t.id === overId);
 
         destinationColumn.tasks.splice(destinationIndex + 1, 0, updatedTask);
 
-        destinationColumn.tasks.forEach((t, index) => {
+        destinationColumn.tasks.forEach((t: Task, index: number) => {
           updateTask({ ...t, position: index + 1 });
         });
       }
@@ -174,7 +178,7 @@ function KanbanBoard({ project }: KanbanBoardProps) {
   const activeTask = activeId
     ? project.columns
         .flatMap((col) => col.tasks)
-        .find((task) => task.id === activeId)
+        .find((task: Task) => task.id === activeId)
     : null;
 
   return (

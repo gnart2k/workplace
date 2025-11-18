@@ -105,6 +105,7 @@ const task = new Hono<{
         projectId: z.string(),
         position: z.number(),
         userId: z.string().optional(),
+        dependsOn: z.array(z.string()),
       }),
     ),
     async (c) => {
@@ -119,6 +120,7 @@ const task = new Hono<{
         projectId,
         position,
         userId,
+        dependsOn,
       } = c.req.valid("json");
 
       const task = await updateTask(
@@ -132,6 +134,7 @@ const task = new Hono<{
         priority,
         position,
         userId,
+        dependsOn,
       );
 
       return c.json(task);

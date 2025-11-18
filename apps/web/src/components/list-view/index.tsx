@@ -5,6 +5,7 @@ import { getColumnIcon, getColumnIconColor } from "@/lib/column";
 import toKebabCase from "@/lib/to-kebab-case";
 import useProjectStore from "@/store/project";
 import type { ProjectWithTasks } from "@/types/project";
+import type Task from "@/types/task";
 import {
   DndContext,
   type DragEndEvent,
@@ -83,7 +84,7 @@ function ListView({ project }: ListViewProps) {
 
     const taskId = over.id.toString();
     const columnWithTask = project?.columns?.find((col) =>
-      col.tasks.some((task) => task.id === taskId),
+      col.tasks.some((task: Task) => task.id === taskId),
     );
 
     if (columnWithTask) {
@@ -105,34 +106,35 @@ function ListView({ project }: ListViewProps) {
 
     const updatedProject = produce(project, (draft) => {
       const sourceColumn = draft?.columns?.find((col) =>
-        col.tasks.some((task) => task.id === activeTaskId),
+        col.tasks.some((task: Task) => task.id === activeTaskId),
       );
       const destinationColumn = draft?.columns?.find(
         (col) =>
-          col.id === overId || col.tasks.some((task) => task.id === overId),
+          col.id === overId ||
+          col.tasks.some((task: Task) => task.id === overId),
       );
 
       if (!sourceColumn || !destinationColumn) return;
 
       const sourceTaskIndex = sourceColumn.tasks.findIndex(
-        (task) => task.id === activeTaskId,
+        (task: Task) => task.id === activeTaskId,
       );
-      const task = sourceColumn.tasks[sourceTaskIndex];
+      const task: Task = sourceColumn.tasks[sourceTaskIndex];
 
       sourceColumn.tasks = sourceColumn.tasks.filter(
-        (t) => t.id !== activeTaskId,
+        (t: Task) => t.id !== activeTaskId,
       );
 
       if (sourceColumn.id === destinationColumn.id) {
         let destinationIndex = destinationColumn.tasks.findIndex(
-          (t) => t.id === overId,
+          (t: Task) => t.id === overId,
         );
         if (sourceTaskIndex <= destinationIndex) {
           destinationIndex += 1;
         }
         destinationColumn.tasks.splice(destinationIndex, 0, task);
 
-        destinationColumn.tasks.forEach((t, index) => {
+        destinationColumn.tasks.forEach((t: Task, index: number) => {
           updateTask({
             ...t,
             status: destinationColumn.id,
@@ -143,7 +145,7 @@ function ListView({ project }: ListViewProps) {
         task.status = destinationColumn.id;
         destinationColumn.tasks.push(task);
 
-        destinationColumn.tasks.forEach((t, index) => {
+        destinationColumn.tasks.forEach((t: Task, index: number) => {
           updateTask({
             ...t,
             status: destinationColumn.id,
@@ -271,7 +273,7 @@ function ListView({ project }: ListViewProps) {
               items={column.tasks}
               strategy={verticalListSortingStrategy}
             >
-              {column.tasks.map((task) => (
+              {column.tasks.map((task: Task) => (
                 <TaskRow
                   key={task.id}
                   task={task}
@@ -298,7 +300,7 @@ function ListView({ project }: ListViewProps) {
   const activeTask = activeId
     ? project.columns
         ?.flatMap((col) => col.tasks)
-        .find((task) => task.id === activeId)
+        .find((task: Task) => task.id === activeId)
     : null;
 
   return (

@@ -1,8 +1,13 @@
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import db from "../../database";
 import { notificationTable, taskTable } from "../../database/schema";
 
-async function getNotifications(userId: string) {
+async function getNotifications(
+  userId: string,
+  workspaceId?: string,
+  projectId?: string,
+  taskId?: string,
+) {
   const notificationsWithTask = await db
     .select({
       notification: notificationTable,
@@ -14,7 +19,16 @@ async function getNotifications(userId: string) {
       taskTable,
       sql`${notificationTable.resourceId} = ${taskTable.id} AND ${notificationTable.resourceType} = 'task'`,
     )
-    .where(eq(notificationTable.userId, userId))
+    .where(
+      and(
+        eq(notificationTable.userId, userId),
+        workspaceId
+          ? eq(notificationTable.workspaceId, workspaceId)
+          : undefined,
+        projectId ? eq(notificationTable.projectId, projectId) : undefined,
+        taskId ? eq(notificationTable.taskId, taskId) : undefined,
+      ),
+    )
     .orderBy(
       sql`CASE ${taskTable.priority} WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END`,
       asc(taskTable.dueDate),
@@ -45,9 +59,13 @@ async function getNotifications(userId: string) {
       if (priorityDiff !== 0) return priorityDiff;
 
       // If priority is the same, sort by due date (earlier due date first)
-      return (
-        new Date(a.taskDueDate).getTime() - new Date(b.taskDueDate).getTime()
-      );
+      const aTime = a.taskDueDate
+        ? new Date(a.taskDueDate).getTime()
+        : Number.POSITIVE_INFINITY;
+      const bTime = b.taskDueDate
+        ? new Date(b.taskDueDate).getTime()
+        : Number.POSITIVE_INFINITY;
+      return aTime - bTime;
     });
 
   console.log(notifications);

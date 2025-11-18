@@ -1,6 +1,6 @@
-import { Gantt, type Task, ViewMode } from "gantt-task-react";
+import { Gantt, type Task as GanttLibTask, ViewMode } from "gantt-task-react";
 import "gantt-task-react/dist/index.css";
-import type { GanttTask } from "@/fetchers/task/get-gantt-tasks";
+import type { GanttApiTask } from "@/types/task";
 import { useMemo } from "react";
 
 // Helper function to map backend status to a color/style
@@ -33,11 +33,11 @@ const getTaskStyle = (status: string) => {
 };
 
 interface GanttChartProps {
-  tasks: GanttTask[];
+  tasks: GanttApiTask[];
 }
 
 export default function GanttChart({ tasks }: GanttChartProps) {
-  const ganttTasks: Task[] = useMemo(() => {
+  const ganttTasks: GanttLibTask[] = useMemo(() => {
     const safeDate = (value: string, fallback: Date = new Date()) => {
       try {
         const d = new Date(value);
@@ -48,7 +48,7 @@ export default function GanttChart({ tasks }: GanttChartProps) {
     };
 
     return tasks
-      .filter((t) => {
+      .filter((t: GanttApiTask) => {
         if (!t.startDate || !t.endDate) return false;
 
         const sd = new Date(t.startDate);
@@ -60,7 +60,7 @@ export default function GanttChart({ tasks }: GanttChartProps) {
           ed.getTime() >= sd.getTime()
         );
       })
-      .map((task) => {
+      .map((task: GanttApiTask) => {
         const startDate = safeDate(task.startDate as string);
         const endDate = safeDate(task.endDate as string, startDate);
 
@@ -78,7 +78,7 @@ export default function GanttChart({ tasks }: GanttChartProps) {
           isDisabled: false,
           styles: getTaskStyle(task.status),
           project: task.assignee?.name || "Unassigned",
-          displayOrder: 1,
+          dependencies: task.dependencies,
         };
       });
   }, [tasks]);

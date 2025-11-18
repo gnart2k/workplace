@@ -10,6 +10,9 @@ async function createNotification({
   type,
   resourceId,
   resourceType,
+  workspaceId,
+  projectId,
+  taskId,
 }: {
   userId: string;
   title: string;
@@ -17,6 +20,9 @@ async function createNotification({
   type?: string;
   resourceId?: string;
   resourceType?: string;
+  workspaceId?: string;
+  projectId?: string;
+  taskId?: string;
 }) {
   const [notification] = await db
     .insert(notificationTable)
@@ -28,6 +34,9 @@ async function createNotification({
       type: type || "info",
       resourceId: resourceId || null,
       resourceType: resourceType || null,
+      workspaceId: workspaceId || null,
+      projectId: projectId || null,
+      taskId: taskId || null,
     })
     .returning();
 

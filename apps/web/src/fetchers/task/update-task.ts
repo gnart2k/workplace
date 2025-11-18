@@ -14,6 +14,7 @@ async function updateTask(taskId: string, task: Task) {
       startDate: task.startDate?.toString() || new Date().toString(),
       position: task.position || 0,
       projectId: task.projectId,
+      dependsOn: task.dependsOn ?? [],
     },
   });
 

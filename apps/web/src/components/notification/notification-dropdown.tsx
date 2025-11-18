@@ -155,6 +155,7 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                   {notifications.map((notification) => {
                     const path = getNotificationPath(notification);
                     const Component = path ? Link : "div";
+                    console.log("notification path", path);
 
                     return (
                       <Component

@@ -112,7 +112,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
   const { mutateAsync: generateDescription, isPending: isGenerating } =
     useGenerateTaskDescription();
 
-  const { mutateAsync } = useCreateTask();
+  const { mutateAsync } = useCreateTask(workspace?.id || "");
 
   const handleClose = () => {
     setTitle("");

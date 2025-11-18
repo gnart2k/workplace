@@ -228,6 +228,18 @@ export const notificationTable = pgTable("notification", {
       onDelete: "cascade",
       onUpdate: "cascade",
     }),
+  workspaceId: text("workspace_id").references(() => workspaceTable.id, {
+    onDelete: "cascade",
+    onUpdate: "cascade",
+  }),
+  projectId: text("project_id").references(() => projectTable.id, {
+    onDelete: "cascade",
+    onUpdate: "cascade",
+  }),
+  taskId: text("task_id").references(() => taskTable.id, {
+    onDelete: "cascade",
+    onUpdate: "cascade",
+  }),
   title: text("title").notNull(),
   content: text("content"),
   type: text("type").notNull().default("info"),
@@ -261,3 +273,25 @@ export const githubIntegrationTable = pgTable("github_integration", {
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
+
+export const notificationRelations = relations(
+  notificationTable,
+  ({ one }) => ({
+    user: one(userTable, {
+      fields: [notificationTable.userId],
+      references: [userTable.id],
+    }),
+    workspace: one(workspaceTable, {
+      fields: [notificationTable.workspaceId],
+      references: [workspaceTable.id],
+    }),
+    project: one(projectTable, {
+      fields: [notificationTable.projectId],
+      references: [projectTable.id],
+    }),
+    task: one(taskTable, {
+      fields: [notificationTable.taskId],
+      references: [taskTable.id],
+    }),
+  }),
+);

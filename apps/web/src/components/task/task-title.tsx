@@ -2,6 +2,7 @@ import useUpdateTask from "@/hooks/mutations/task/use-update-task";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import debounce from "@/lib/debounce";
 import { Route } from "@/routes/_layout/_authenticated/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId_";
+import type Task from "@/types/task";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod/v4";
@@ -29,13 +30,14 @@ function TaskTitle({
     setIsSaving(true);
     try {
       await updateTask({
-        ...task,
+        ...(task as Task),
         title: value,
         userId: task.userId || "",
         status: task.status || "",
         dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
         priority: task.priority || "",
         position: task.position || 0,
+        dependsOn: (task as Task).dependsOn || [],
       });
       toast.success("Task title updated", { duration: 2000 });
     } catch (error) {

@@ -10,6 +10,7 @@ import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import useGetTasks from "@/hooks/queries/task/use-get-tasks";
 import useProjectStore from "@/store/project";
+import type Task from "@/types/task"; // Added this import
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
@@ -111,7 +112,7 @@ function TaskEditPage() {
                 </div>
               </div>
             </div>
-            {task && <TaskInfo task={task} setIsSaving={setIsSaving} />}
+            {task && <TaskInfo task={task as Task} setIsSaving={setIsSaving} />}
           </div>
         </div>
       </motion.div>

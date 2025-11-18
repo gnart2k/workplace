@@ -15,11 +15,13 @@ async function updateTask(
   priority: string,
   position: number,
   userId?: string,
+  dependsOn?: string[] | null,
 ) {
   const existingTask = await db.query.taskTable.findFirst({
     where: eq(taskTable.id, id),
   });
 
+  console.log(dependsOn);
   if (!existingTask) {
     throw new HTTPException(404, {
       message: "Task not found",
@@ -38,6 +40,7 @@ async function updateTask(
       priority,
       position,
       userId: userId || null,
+      dependsOn: dependsOn || null,
     })
     .where(eq(taskTable.id, id))
     .returning();
