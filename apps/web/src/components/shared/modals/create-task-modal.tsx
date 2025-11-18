@@ -142,7 +142,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
       setDescription(generatedDescription);
       toast.success("AI description generated.");
     } catch (error) {
-      toast.error("Failed to generate description.");
+      toast.error("Failed to generate AI description.");
     }
   };
 

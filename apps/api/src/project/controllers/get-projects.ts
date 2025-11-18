@@ -6,7 +6,11 @@ async function getProjects(workspaceId: string) {
   const projects = await db.query.projectTable.findMany({
     where: eq(projectTable.workspaceId, workspaceId),
     with: {
-      tasks: true,
+      tasks: {
+        columns: {
+          dependsOn: false,
+        },
+      },
     },
   });
 

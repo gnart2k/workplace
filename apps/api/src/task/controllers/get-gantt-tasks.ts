@@ -7,8 +7,9 @@ export type GanttTask = {
   id: string;
   title: string;
   status: string;
-  startDate: Date;
+  startDate: Date | null;
   endDate: Date | null;
+  dependencies: string[];
   assignee: {
     id: string;
     name: string;
@@ -31,8 +32,9 @@ async function getGanttTasks(projectId: string): Promise<GanttTask[]> {
       id: taskTable.id,
       title: taskTable.title,
       status: taskTable.status,
-      startDate: taskTable.createdAt, // Using createdAt as a proxy for start date
+      startDate: taskTable.startDate, // Use the correct start_date column
       endDate: taskTable.dueDate, // Using dueDate as end date
+      dependencies: taskTable.dependsOn,
       assigneeId: userTable.id,
       assigneeName: userTable.name,
     })
@@ -47,6 +49,7 @@ async function getGanttTasks(projectId: string): Promise<GanttTask[]> {
     status: task.status,
     startDate: task.startDate,
     endDate: task.endDate,
+    dependencies: task.dependencies ?? [],
     assignee: task.assigneeId
       ? {
           id: task.assigneeId,

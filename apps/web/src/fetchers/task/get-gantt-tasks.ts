@@ -5,8 +5,9 @@ export type GanttTask = {
   id: string;
   title: string;
   status: string;
-  startDate: string; // Dates are serialized as strings
+  startDate: string | null; // Dates are serialized as strings
   endDate: string | null; // Dates are serialized as strings
+  dependencies: string[];
   assignee: {
     id: string;
     name: string;

@@ -38,23 +38,31 @@ interface GanttChartProps {
 
 export default function GanttChart({ tasks }: GanttChartProps) {
   const ganttTasks: Task[] = useMemo(() => {
+    const safeDate = (value: string, fallback: Date = new Date()) => {
+      try {
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? fallback : d;
+      } catch {
+        return fallback;
+      }
+    };
+
     return tasks
-      .filter((t) => t.startDate && t.endDate) // still good
+      .filter((t) => {
+        if (!t.startDate || !t.endDate) return false;
+
+        const sd = new Date(t.startDate);
+        const ed = new Date(t.endDate);
+
+        return (
+          !Number.isNaN(sd.getTime()) &&
+          !Number.isNaN(ed.getTime()) &&
+          ed.getTime() >= sd.getTime()
+        );
+      })
       .map((task) => {
-        let startDate: Date;
-        let endDate: Date;
-
-        try {
-          startDate = new Date(task.startDate ?? "");
-          if (Number.isNaN(startDate.getTime())) startDate = new Date();
-
-          endDate = new Date(task.endDate ?? "");
-          if (Number.isNaN(endDate.getTime())) endDate = startDate;
-        } catch {
-          // Fallback in case task.startDate is something unexpected
-          startDate = new Date();
-          endDate = new Date();
-        }
+        const startDate = safeDate(task.startDate!);
+        const endDate = safeDate(task.endDate!, startDate);
 
         const isCompleted =
           task.status?.toLowerCase() === "done" ||
@@ -75,7 +83,7 @@ export default function GanttChart({ tasks }: GanttChartProps) {
       });
   }, [tasks]);
 
-  console.log(tasks);
+  console.log(ganttTasks);
 
   if (ganttTasks.length === 0) {
     return (
@@ -91,34 +99,18 @@ export default function GanttChart({ tasks }: GanttChartProps) {
   }
 
   return (
-    <div className="h-full w-full overflow-auto p-4">
-      <Gantt
-        tasks={ganttTasks}
-        viewMode={ViewMode.Day}
-        listCellWidth="300px"
-        columnWidth={60}
-        fontFamily="Inter, sans-serif"
-        locale="en-GB"
-        todayColor="hsl(217.2 91.2% 59.8% / 0.2)"
-        // Custom header to show assignee/project name
-        TaskListHeader={({ headerHeight, rowWidth, fontFamily, fontSize }) => {
-          return (
-            <div
-              className="gantt-header"
-              style={{
-                height: headerHeight,
-                width: rowWidth,
-                fontFamily,
-                fontSize,
-              }}
-            />
-          );
-        }}
-        // Custom list item to show task details
-        TaskListTable={() => {
-          return <div className="gantt-table" />;
-        }}
-      />
+    <div className="w-full h-full p-0 overflow-auto">
+      <div className="w-full min-w-full h-full">
+        <Gantt
+          tasks={ganttTasks}
+          viewMode={ViewMode.Day}
+          listCellWidth="200px"
+          columnWidth={60}
+          fontFamily="Inter, sans-serif"
+          locale="en-GB"
+          todayColor="hsl(217.2 91.2% 59.8% / 0.2)"
+        />
+      </div>
     </div>
   );
 }

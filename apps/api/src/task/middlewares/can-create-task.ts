@@ -35,4 +35,3 @@ const canCreateTask: MiddlewareHandler<{
 };
 
 export default canCreateTask;
-

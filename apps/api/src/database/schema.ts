@@ -150,6 +150,7 @@ export const taskTable = pgTable("task", {
   priority: text("priority").default("low"),
   startDate: timestamp("start_date", { mode: "date" }),
   dueDate: timestamp("due_date", { mode: "date" }),
+  dependsOn: text("depends_on").array(), // New column for task dependencies
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
 

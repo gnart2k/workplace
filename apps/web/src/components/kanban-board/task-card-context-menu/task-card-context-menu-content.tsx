@@ -206,7 +206,7 @@ export default function TaskCardContextMenuContent({
                 className={cn(
                   "w-3.5 h-3.5",
                   priorityColorsTaskCard[
-                  "low" as keyof typeof priorityColorsTaskCard
+                    "low" as keyof typeof priorityColorsTaskCard
                   ],
                 )}
               />
@@ -221,7 +221,7 @@ export default function TaskCardContextMenuContent({
                 className={cn(
                   "w-3.5 h-3.5",
                   priorityColorsTaskCard[
-                  "medium" as keyof typeof priorityColorsTaskCard
+                    "medium" as keyof typeof priorityColorsTaskCard
                   ],
                 )}
               />
@@ -236,7 +236,7 @@ export default function TaskCardContextMenuContent({
                 className={cn(
                   "w-3.5 h-3.5",
                   priorityColorsTaskCard[
-                  "high" as keyof typeof priorityColorsTaskCard
+                    "high" as keyof typeof priorityColorsTaskCard
                   ],
                 )}
               />
@@ -251,7 +251,7 @@ export default function TaskCardContextMenuContent({
                 className={cn(
                   "w-3.5 h-3.5",
                   priorityColorsTaskCard[
-                  "urgent" as keyof typeof priorityColorsTaskCard
+                    "urgent" as keyof typeof priorityColorsTaskCard
                   ],
                 )}
               />
