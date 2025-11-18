@@ -61,8 +61,8 @@ export default function GanttChart({ tasks }: GanttChartProps) {
         );
       })
       .map((task) => {
-        const startDate = safeDate(task.startDate!);
-        const endDate = safeDate(task.endDate!, startDate);
+        const startDate = safeDate(task.startDate as string);
+        const endDate = safeDate(task.endDate as string, startDate);
 
         const isCompleted =
           task.status?.toLowerCase() === "done" ||

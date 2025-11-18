@@ -22,8 +22,35 @@ async function getNotifications(userId: string) {
     )
     .limit(50);
 
-  const notifications = notificationsWithTask.map((n) => n.notification);
+  type Priority = "low" | "medium" | "high" | "urgent";
 
+  const priorityOrder: Record<Priority, number> = {
+    urgent: 4,
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
+
+  const notifications = notificationsWithTask
+    .map((n) => ({
+      ...n.notification, // all fields from notification
+      taskPriority: n.taskPriority,
+      taskDueDate: n.taskDueDate,
+    }))
+    .sort((a, b) => {
+      // Sort by priority first
+      const priorityDiff =
+        (priorityOrder[b.taskPriority as Priority] || 0) -
+        (priorityOrder[a.taskPriority as Priority] || 0);
+      if (priorityDiff !== 0) return priorityDiff;
+
+      // If priority is the same, sort by due date (earlier due date first)
+      return (
+        new Date(a.taskDueDate).getTime() - new Date(b.taskDueDate).getTime()
+      );
+    });
+
+  console.log(notifications);
   return notifications;
 }
 

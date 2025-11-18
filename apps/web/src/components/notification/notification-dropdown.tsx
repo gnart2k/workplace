@@ -34,6 +34,7 @@ import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { Bell } from "lucide-react";
 import { forwardRef, useImperativeHandle, useState } from "react";
+import notification from "../../../../api/src/notification";
 
 export interface NotificationDropdownRef {
   toggle: () => void;
@@ -51,6 +52,8 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
 
     const unreadNotifications = notifications?.filter((n) => !n.isRead) || [];
     const hasNotifications = notifications && notifications.length > 0;
+
+    console.log(notifications);
 
     const getNotificationPath = (notification: Notification) => {
       const n = notification as Notification & {
@@ -183,6 +186,36 @@ const NotificationDropdown = forwardRef<NotificationDropdownRef>(
                               <p className="text-xs text-muted-foreground line-clamp-2">
                                 {notification.content}
                               </p>
+                            )}
+                            {notification.resourceType === "task" && (
+                              <div className="flex items-center gap-2 mt-2">
+                                {notification.taskPriority && (
+                                  <Badge
+                                    variant="secondary"
+                                    badgeColor={
+                                      notification.taskPriority === "urgent"
+                                        ? "red"
+                                        : notification.taskPriority === "high"
+                                          ? "orange"
+                                          : notification.taskPriority ===
+                                              "medium"
+                                            ? "yellow"
+                                            : "gray"
+                                    }
+                                    className="text-xs capitalize"
+                                  >
+                                    {notification.taskPriority}
+                                  </Badge>
+                                )}
+                                {notification.taskDueDate && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Due:{" "}
+                                    {new Date(
+                                      notification.taskDueDate,
+                                    ).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
                             )}
                             <p className="text-xs text-muted-foreground mt-2">
                               {formatDistanceToNow(notification.createdAt, {
