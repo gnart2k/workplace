@@ -147,8 +147,8 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !project?.id || !workspace?.id) return;
+    e.preventDefault(); // Ensure event default is prevented at the start
+    if (!title.trim() || !project?.id || !workspace?.id) return; // Perform essential validation checks
 
     try {
       const taskStatus = status ?? "to-do";
@@ -166,8 +166,18 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
         status: taskStatus,
       });
 
-      const { prefix } = await generatePrefix(title.trim());
-      const newTitle = `${prefix}(${project.slug}-${newTask.number}): ${title.trim()}`;
+      // Task creation itself was successful. Show success toast here.
+      toast.success("Task created successfully");
+
+      let newTitle = newTask.title;
+      try {
+        const { prefix } = await generatePrefix(title.trim());
+        newTitle = `${prefix}(${project.slug}-${newTask.number}): ${title.trim()}`;
+      } catch (error) {
+        console.error("Failed to generate AI prefix:", error);
+        // Optionally, inform the user about partial success/failure for non-critical ops
+        // toast.info("AI prefix generation failed, but task created.");
+      }
 
       for (const label of labels) {
         try {
@@ -189,7 +199,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
           if (targetColumn) {
             targetColumn.tasks.push({
               ...newTask,
-              title: newTitle,
+              title: newTitle, // Use newTitle here
               assigneeId: assigneeId,
               assigneeName: assigneeId,
               position: 0,
@@ -199,13 +209,20 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
       });
 
       setProject(updatedProject);
-      updateTask({
-        ...newTask,
-        title: newTitle,
-        position: 0,
-        assigneeId: assigneeId,
-      });
-      toast.success("Task created successfully");
+      try {
+        // This updateTask call updates the task that was already created.
+        // If it fails, the task is still created, so we log instead of toast.error.
+        updateTask({
+          ...newTask,
+          title: newTitle, // Pass newTitle to updateTask
+          position: 0,
+          assigneeId: assigneeId,
+        });
+      } catch (error) {
+        console.error("Failed to update task with new title/assignee:", error);
+        // Optionally, inform the user about partial success/failure for non-critical ops
+        // toast.info("Task update after creation failed, but task created.");
+      }
 
       if (createMore) {
         setTitle("");
@@ -222,6 +239,7 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
         handleClose();
       }
     } catch (error) {
+      // This catch block specifically handles errors during the initial task creation (mutateAsync)
       toast.error(
         error instanceof Error ? error.message : "Failed to create task",
       );

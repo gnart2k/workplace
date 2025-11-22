@@ -33,17 +33,21 @@ function useCreateTask(workspaceId: string) {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
 
-      createNotification({
-        userId: data.userId,
-        title: `New task "${data.title}" created!`,
-        content: `Task "${data.title}" has been created in project "${data.project.name}".`,
-        type: "info",
-        resourceId: data.id,
-        resourceType: "task",
-        workspaceId,
-        projectId: data.projectId,
-        taskId: data.id,
-      });
+      try {
+        createNotification({
+          userId: data.userId,
+          title: `New task "${data.title}" created!`,
+          content: `Task "${data.title}" has been created.`,
+          type: "info",
+          resourceId: data.id,
+          resourceType: "task",
+          workspaceId,
+          projectId: data.projectId,
+          taskId: data.id,
+        });
+      } catch (error) {
+        console.error("Failed to create notification:", error);
+      }
     },
   });
 }
