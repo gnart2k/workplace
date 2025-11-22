@@ -18,7 +18,8 @@
 			".source",
 			".next",
 			"out",
-			"actions-runner"
+			"actions-runner",
+			"apps/api/drizzle/meta/"
 		]
 	},
 	"formatter": {

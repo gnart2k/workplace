@@ -16,11 +16,28 @@ const notification = new Hono<{
     userId: string;
   };
 }>()
-  .get("/", async (c) => {
-    const userId = c.get("userId");
-    const notifications = await getNotifications(userId);
-    return c.json(notifications);
-  })
+  .get(
+    "/",
+    zValidator(
+      "query",
+      z.object({
+        workspaceId: z.string().optional(),
+        projectId: z.string().optional(),
+        taskId: z.string().optional(),
+      }),
+    ),
+    async (c) => {
+      const userId = c.get("userId");
+      const { workspaceId, projectId, taskId } = c.req.valid("query");
+      const notifications = await getNotifications(
+        userId,
+        workspaceId,
+        projectId,
+        taskId,
+      );
+      return c.json(notifications);
+    },
+  )
   .post(
     "/",
     zValidator(
@@ -32,11 +49,23 @@ const notification = new Hono<{
         type: z.string().optional(),
         resourceId: z.string().optional(),
         resourceType: z.string().optional(),
+        workspaceId: z.string().optional(),
+        projectId: z.string().optional(),
+        taskId: z.string().optional(),
       }),
     ),
     async (c) => {
-      const { userId, title, content, type, resourceId, resourceType } =
-        c.req.valid("json");
+      const {
+        userId,
+        title,
+        content,
+        type,
+        resourceId,
+        resourceType,
+        workspaceId,
+        projectId,
+        taskId,
+      } = c.req.valid("json");
 
       const notification = await createNotification({
         userId,
@@ -45,6 +74,9 @@ const notification = new Hono<{
         type,
         resourceId,
         resourceType,
+        workspaceId,
+        projectId,
+        taskId,
       });
 
       return c.json(notification);
@@ -59,11 +91,28 @@ const notification = new Hono<{
       return c.json(notification);
     },
   )
-  .patch("/read-all", async (c) => {
-    const userId = c.get("userId");
-    const result = await markAllNotificationsAsRead(userId);
-    return c.json(result);
-  })
+  .patch(
+    "/read-all",
+    zValidator(
+      "query",
+      z.object({
+        workspaceId: z.string().optional(),
+        projectId: z.string().optional(),
+        taskId: z.string().optional(),
+      }),
+    ),
+    async (c) => {
+      const userId = c.get("userId");
+      const { workspaceId, projectId, taskId } = c.req.valid("query");
+      const result = await markAllNotificationsAsRead(
+        userId,
+        workspaceId,
+        projectId,
+        taskId,
+      );
+      return c.json(result);
+    },
+  )
   .delete("/clear-all", async (c) => {
     const userId = c.get("userId");
     const result = await clearNotifications(userId);
@@ -76,14 +125,18 @@ subscribeToEvent(
     taskId,
     userId,
     title,
+    workspaceId,
+    projectId,
   }: {
     taskId: string;
     userId: string;
     title?: string;
     type: string;
     content: string;
+    workspaceId: string;
+    projectId: string;
   }) => {
-    if (!userId || !taskId) {
+    if (!userId || !taskId || !workspaceId || !projectId) {
       return;
     }
 
@@ -94,6 +147,9 @@ subscribeToEvent(
       type: "task",
       resourceId: taskId,
       resourceType: "task",
+      workspaceId,
+      projectId,
+      taskId,
     });
   },
 );
@@ -104,7 +160,15 @@ subscribeToEvent(
     workspaceId,
     ownerId,
     workspaceName,
-  }: { workspaceId: string; ownerId: string; workspaceName: string }) => {
+    projectId,
+    taskId,
+  }: {
+    workspaceId: string;
+    ownerId: string;
+    workspaceName: string;
+    projectId?: string;
+    taskId?: string;
+  }) => {
     if (!workspaceId || !ownerId) {
       return;
     }
@@ -115,6 +179,9 @@ subscribeToEvent(
       type: "workspace",
       resourceId: workspaceId,
       resourceType: "workspace",
+      workspaceId,
+      projectId,
+      taskId,
     });
   },
 );
@@ -127,14 +194,18 @@ subscribeToEvent(
     oldStatus,
     newStatus,
     title,
+    workspaceId,
+    projectId,
   }: {
     taskId: string;
     userId: string | null;
     oldStatus: string;
     newStatus: string;
     title: string;
+    workspaceId: string;
+    projectId: string;
   }) => {
-    if (!taskId || !userId) {
+    if (!taskId || !userId || !workspaceId || !projectId) {
       return;
     }
 
@@ -144,6 +215,9 @@ subscribeToEvent(
       type: "task",
       resourceId: taskId,
       resourceType: "task",
+      workspaceId,
+      projectId,
+      taskId,
     });
   },
 );
@@ -154,12 +228,16 @@ subscribeToEvent(
     taskId,
     newAssignee,
     title,
+    workspaceId,
+    projectId,
   }: {
     taskId: string;
     newAssignee: string | null;
     title: string;
+    workspaceId: string;
+    projectId: string;
   }) => {
-    if (!taskId || !newAssignee) {
+    if (!taskId || !newAssignee || !workspaceId || !projectId) {
       return;
     }
 
@@ -170,6 +248,9 @@ subscribeToEvent(
       type: "task",
       resourceId: taskId,
       resourceType: "task",
+      workspaceId,
+      projectId,
+      taskId,
     });
   },
 );
@@ -180,14 +261,18 @@ subscribeToEvent(
     timeEntryId,
     taskId,
     userId,
+    workspaceId,
+    projectId,
   }: {
     timeEntryId: string;
     taskId: string;
     userId: string;
     type: string;
     content: string;
+    workspaceId: string;
+    projectId: string;
   }) => {
-    if (!timeEntryId || !taskId || !userId) {
+    if (!timeEntryId || !taskId || !userId || !workspaceId || !projectId) {
       return;
     }
 
@@ -203,6 +288,9 @@ subscribeToEvent(
         type: "time-entry",
         resourceId: taskId,
         resourceType: "task",
+        workspaceId,
+        projectId,
+        taskId,
       });
     }
   },

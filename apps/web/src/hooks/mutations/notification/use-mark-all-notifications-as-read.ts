@@ -1,13 +1,20 @@
 import markAllNotificationsAsRead from "@/fetchers/notification/mark-all-notifications-as-read";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-function useMarkAllNotificationsAsRead() {
+function useMarkAllNotificationsAsRead(
+  workspaceId?: string,
+  projectId?: string,
+  taskId?: string,
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: markAllNotificationsAsRead,
+    mutationFn: () =>
+      markAllNotificationsAsRead(workspaceId, projectId, taskId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", workspaceId, projectId, taskId],
+      });
     },
   });
 }

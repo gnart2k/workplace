@@ -51,6 +51,16 @@ async function updateTask(
     });
   }
 
+  const projectDetails = await db.query.projectTable.findFirst({
+    where: eq(taskTable.projectId, updatedTask.projectId),
+  });
+
+  if (!projectDetails) {
+    throw new HTTPException(404, {
+      message: "Project not found",
+    });
+  }
+
   const eventPromises = [];
   if (existingTask.status !== status) {
     eventPromises.push(
@@ -60,6 +70,8 @@ async function updateTask(
         oldStatus: existingTask.status,
         newStatus: status,
         title: updatedTask.title,
+        workspaceId: projectDetails.workspaceId,
+        projectId: updatedTask.projectId,
       }),
     );
   }
@@ -71,6 +83,8 @@ async function updateTask(
         oldPriority: existingTask.priority,
         newPriority: priority,
         title: updatedTask.title,
+        workspaceId: projectDetails.workspaceId,
+        projectId: updatedTask.projectId,
       }),
     );
   }
@@ -80,6 +94,8 @@ async function updateTask(
         taskId: updatedTask.id,
         newAssignee: userId,
         title: updatedTask.title,
+        workspaceId: projectDetails.workspaceId,
+        projectId: updatedTask.projectId,
       }),
     );
   }
