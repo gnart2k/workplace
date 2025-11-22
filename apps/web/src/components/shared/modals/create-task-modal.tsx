@@ -129,7 +129,8 @@ function CreateTaskModal({ open, onClose, status }: CreateTaskModalProps) {
     onClose();
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (e) => {
+    e.preventDefault();
     if (!title.trim()) {
       toast.error("Please enter a task title first.");
       return;
