@@ -56,18 +56,21 @@ function TaskDescription({ setIsSaving, isSaving }: TaskDescriptionProps) {
     if (!task || !form.formState.isDirty) return;
 
     setIsSaving(true);
-    await updateTask({
-      ...(task as Task),
-      description: form.getValues("description"),
-      userId: task.userId || "",
-      title: task.title || "",
-      status: task.status || "",
-      dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
-      priority: task.priority || "",
-      position: task.position || 0,
-      dependsOn: (task as Task).dependsOn || [],
-    });
-    setIsSaving(false);
+    try {
+      await updateTask({
+        ...(task as Task),
+        description: form.getValues("description"),
+        userId: task.userId || "",
+        title: task.title || "",
+        status: task.status || "",
+        dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
+        priority: task.priority || "",
+        position: task.position || 0,
+        dependsOn: (task as Task).dependsOn || [],
+      });
+    } finally {
+      setIsSaving(false);
+    }
     form.reset(form.getValues());
   }
 
